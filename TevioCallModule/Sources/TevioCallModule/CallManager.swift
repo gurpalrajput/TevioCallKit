@@ -30,6 +30,8 @@ public final class CallManager: NSObject {
     private var pendingEndStatus: CallStatus?
     private var incomingViewModel: IncomingCallViewModel?
     private var activeViewModel: ActiveCallViewModel?
+    private weak var incomingCallController: UIViewController?
+    private weak var activeCallController: UIViewController?
     private var audioPlayer: AVAudioPlayer?
     private var shouldJoinOnAudioActivation = false
 
@@ -207,6 +209,7 @@ public final class CallManager: NSObject {
         incomingViewModel = model
         let controller = UIHostingController(rootView: IncomingCallView(model: model))
         controller.modalPresentationStyle = .fullScreen
+        incomingCallController = controller
         host?.presentIncomingCall(controller)
         playRingtoneIfNeeded()
     }
@@ -231,7 +234,19 @@ public final class CallManager: NSObject {
         activeViewModel = model
         let controller = UIHostingController(rootView: ActiveCallView(model: model))
         controller.modalPresentationStyle = .fullScreen
+        activeCallController = controller
         shouldJoinOnAudioActivation = fromCallKit
+
+        if let incomingController = incomingCallController,
+           let presenter = incomingController.presentingViewController {
+            incomingController.dismiss(animated: false) { [weak self] in
+                guard let self else { return }
+                self.incomingCallController = nil
+                presenter.present(controller, animated: true)
+            }
+            return
+        }
+
         host?.presentActiveCall(controller)
     }
 
@@ -311,17 +326,35 @@ public final class CallManager: NSObject {
         if let callUUID {
             provider.reportCall(with: callUUID, endedAt: Date(), reason: callEndedReason(for: status))
         }
-        host?.dismissCallUI(animated: true)
+        dismissPresentedCallUI(animated: true)
         currentSession = nil
         activeViewModel = nil
         incomingViewModel = nil
+        activeCallController = nil
+        incomingCallController = nil
         pendingEndStatus = nil
     }
 
     private func finishCallUI() {
         cancelUnansweredTimer()
         stopElapsedTimer()
-        host?.dismissCallUI(animated: true)
+        dismissPresentedCallUI(animated: true)
+    }
+
+    private func dismissPresentedCallUI(animated: Bool) {
+        if let incomingController = incomingCallController,
+           incomingController.presentingViewController != nil {
+            incomingController.dismiss(animated: animated)
+            return
+        }
+
+        if let activeController = activeCallController,
+           activeController.presentingViewController != nil {
+            activeController.dismiss(animated: animated)
+            return
+        }
+
+        host?.dismissCallUI(animated: animated)
     }
 
     private func startUnansweredTimer() {
