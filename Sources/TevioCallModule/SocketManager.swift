@@ -31,7 +31,7 @@ public final class SocketManager: NSObject, CallTransporting {
             namespace: String = "/",
             headers: [String: String] = [:],
             connectParams: [String: Any] = [:],
-            statusEventName: String = "call-status",
+            statusEventName: String = "call:status",
             statusChannelNameProvider: StatusChannelNameProvider? = nil,
             subscribeEventName: String? = "call-subscribe",
             unsubscribeEventName: String? = "call-unsubscribe",
@@ -288,9 +288,10 @@ public final class SocketManager: NSObject, CallTransporting {
 
     private func makeRemoteCallStatusEvent(eventName: String, items: [Any]) -> RemoteCallStatusEvent? {
         let payload = items.compactMap { $0 as? [String: Any] }.first
-        let threadId = payload?["thread_id"] as? String ?? payload?["threadId"] as? String
-        let statusValue = payload?["status"] as? String
-            ?? payload?["type"] as? String
+        let threadId = payload?["thread_id"] as? String
+            ?? payload?["threadId"] as? String
+            ?? inferredThreadID(forEventName: eventName)
+        let statusValue = rawStatusValue(fromPayload: payload)
             ?? rawStatusValue(fromEventName: eventName)
 
         guard
@@ -311,6 +312,48 @@ public final class SocketManager: NSObject, CallTransporting {
 
         if eventName == configuration.statusEventName {
             return nil
+        }
+
+        return nil
+    }
+
+    private func rawStatusValue(fromPayload payload: [String: Any]?) -> String? {
+        guard let payload else { return nil }
+
+        let candidateKeys = ["status", "type", "data", "event", "name"]
+        for key in candidateKeys {
+            guard let rawValue = payload[key] else { continue }
+
+            if let status = normalizedStatusValue(from: rawValue) {
+                return status
+            }
+        }
+
+        return nil
+    }
+
+    private func normalizedStatusValue(from value: Any) -> String? {
+        if let status = value as? CallStatus {
+            return status.rawValue
+        }
+
+        if let string = value as? String {
+            return CallStatus(rawValue: string) != nil ? string : nil
+        }
+
+        return nil
+    }
+
+    private func inferredThreadID(forEventName eventName: String) -> String? {
+        if let channelNameProvider = configuration.statusChannelNameProvider {
+            let matchingThreadIDs = handlersByThreadID.keys.filter { channelNameProvider($0) == eventName }
+            if matchingThreadIDs.count == 1 {
+                return matchingThreadIDs[0]
+            }
+        }
+
+        if handlersByThreadID.count == 1 {
+            return handlersByThreadID.keys.first
         }
 
         return nil
