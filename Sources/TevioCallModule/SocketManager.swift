@@ -42,7 +42,7 @@ public final class SocketManager: NSObject, CallTransporting {
             self.path = path
             self.namespace = namespace
             self.headers = headers
-            self.connectParams = connectParams
+            self.connectParams = SocketManager.sanitizedJSONObject(connectParams)
             self.statusEventName = statusEventName
             self.statusChannelNameProvider = statusChannelNameProvider
             self.subscribeEventName = subscribeEventName
@@ -391,8 +391,9 @@ public final class SocketManager: NSObject, CallTransporting {
     }
 
     private func emitEvent(_ eventName: String, payload: [String: Any], context: String) {
-        debugLog("emit event=\(eventName) context=\(context) payload=\(stringify(payload))")
-        socket.emit(eventName, payload)
+        let sanitizedPayload = Self.sanitizedJSONObject(payload)
+        debugLog("emit event=\(eventName) context=\(context) payload=\(stringify(sanitizedPayload))")
+        socket.emit(eventName, sanitizedPayload)
     }
 
     private func debugLog(_ message: String) {
@@ -417,6 +418,66 @@ public final class SocketManager: NSObject, CallTransporting {
     private func notifyState(_ state: ConnectionState) {
         callbackQueue.async { [onStateChange] in
             onStateChange?(state)
+        }
+    }
+
+    private static func sanitizedJSONObject(_ dictionary: [String: Any]) -> [String: Any] {
+        dictionary.reduce(into: [String: Any]()) { result, element in
+            guard let sanitizedValue = sanitizedJSONValue(element.value) else { return }
+            result[element.key] = sanitizedValue
+        }
+    }
+
+    private static func sanitizedJSONValue(_ value: Any) -> Any? {
+        switch value {
+        case let string as String:
+            return string
+        case let number as NSNumber:
+            return number
+        case let bool as Bool:
+            return bool
+        case let int as Int:
+            return int
+        case let int8 as Int8:
+            return Int(int8)
+        case let int16 as Int16:
+            return Int(int16)
+        case let int32 as Int32:
+            return Int(int32)
+        case let int64 as Int64:
+            return int64
+        case let uint as UInt:
+            return uint
+        case let uint8 as UInt8:
+            return UInt(uint8)
+        case let uint16 as UInt16:
+            return UInt(uint16)
+        case let uint32 as UInt32:
+            return UInt(uint32)
+        case let uint64 as UInt64:
+            return uint64
+        case let double as Double:
+            return double
+        case let float as Float:
+            return Double(float)
+        case let decimal as Decimal:
+            return NSDecimalNumber(decimal: decimal)
+        case let url as URL:
+            return url.absoluteString
+        case let date as Date:
+            return ISO8601DateFormatter().string(from: date)
+        case let array as [Any]:
+            return array.compactMap(Self.sanitizedJSONValue)
+        case let dictionary as [String: Any]:
+            return sanitizedJSONObject(dictionary)
+        case let dictionary as [AnyHashable: Any]:
+            return dictionary.reduce(into: [String: Any]()) { result, element in
+                guard let key = element.key as? String,
+                      let sanitizedValue = sanitizedJSONValue(element.value) else { return }
+                result[key] = sanitizedValue
+            }
+        default:
+            return nil
         }
     }
 }
