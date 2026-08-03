@@ -401,12 +401,13 @@ public final class SocketManager: NSObject, CallTransporting {
     }
 
     private func stringify(_ value: Any) -> String {
-        if let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
+        let sanitizedValue = Self.sanitizedJSONValue(value, stringifyUnsupportedValues: true) ?? String(describing: value)
+        if let data = try? JSONSerialization.data(withJSONObject: sanitizedValue, options: [.sortedKeys]),
            let string = String(data: data, encoding: .utf8) {
             return string
         }
 
-        return String(describing: value)
+        return String(describing: sanitizedValue)
     }
 
     private func notifyRawEvent(name: String, items: [Any]) {
@@ -423,12 +424,12 @@ public final class SocketManager: NSObject, CallTransporting {
 
     private static func sanitizedJSONObject(_ dictionary: [String: Any]) -> [String: Any] {
         dictionary.reduce(into: [String: Any]()) { result, element in
-            guard let sanitizedValue = sanitizedJSONValue(element.value) else { return }
+            guard let sanitizedValue = sanitizedJSONValue(element.value, stringifyUnsupportedValues: true) else { return }
             result[element.key] = sanitizedValue
         }
     }
 
-    private static func sanitizedJSONValue(_ value: Any) -> Any? {
+    private static func sanitizedJSONValue(_ value: Any, stringifyUnsupportedValues: Bool = false) -> Any? {
         switch value {
         case let string as String:
             return string
@@ -467,17 +468,17 @@ public final class SocketManager: NSObject, CallTransporting {
         case let date as Date:
             return ISO8601DateFormatter().string(from: date)
         case let array as [Any]:
-            return array.compactMap(Self.sanitizedJSONValue)
+            return array.compactMap { sanitizedJSONValue($0, stringifyUnsupportedValues: stringifyUnsupportedValues) }
         case let dictionary as [String: Any]:
             return sanitizedJSONObject(dictionary)
         case let dictionary as [AnyHashable: Any]:
             return dictionary.reduce(into: [String: Any]()) { result, element in
                 guard let key = element.key as? String,
-                      let sanitizedValue = sanitizedJSONValue(element.value) else { return }
+                      let sanitizedValue = sanitizedJSONValue(element.value, stringifyUnsupportedValues: stringifyUnsupportedValues) else { return }
                 result[key] = sanitizedValue
             }
         default:
-            return nil
+            return stringifyUnsupportedValues ? String(describing: value) : nil
         }
     }
 }
