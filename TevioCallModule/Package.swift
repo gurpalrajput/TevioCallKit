@@ -24,7 +24,7 @@ let package = Package(
                 .product(name: "RtcBasic", package: "AgoraRtcEngine_iOS"),
                 .product(name: "SocketIO", package: "socket.io-client-swift")
             ],
-            path: "TevioCallModule/Sources/TevioCallModule",
+            path: "Sources/TevioCallModule",
             resources: [
                 .process("Resources")
             ]
