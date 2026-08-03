@@ -228,7 +228,7 @@ public struct ActiveCallView: View {
 
                 ActiveCallIconControl(
                     title: model.speakerTitle,
-                    imageResource: model.speakerEnabled ? .speaker : .speakerEnabled,
+                    imageResource: model.speakerEnabled ? .speakerEnabled : .speaker,
                     titleColor: palette.primaryText,
                     action: {
                         model.onToggleSpeaker?()

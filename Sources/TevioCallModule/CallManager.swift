@@ -34,6 +34,8 @@ public final class CallManager: NSObject {
     private weak var activeCallController: UIViewController?
     private var audioPlayer: AVAudioPlayer?
     private var shouldJoinOnAudioActivation = false
+    private let defaultMutedState = false
+    private let defaultSpeakerEnabledState = false
 
     public init(
         transport: CallTransporting,
@@ -106,6 +108,13 @@ public final class CallManager: NSObject {
 
     func setSpeakerEnabled(_ isEnabled: Bool) {
         audioEngine.setSpeakerEnabled(isEnabled)
+    }
+
+    private func applyDefaultAudioState(to model: ActiveCallViewModel? = nil) {
+        model?.isMuted = defaultMutedState
+        model?.speakerEnabled = defaultSpeakerEnabledState
+        setMuted(defaultMutedState)
+        setSpeakerEnabled(defaultSpeakerEnabledState)
     }
 
     public func handleIncomingPush(payload: [AnyHashable: Any], completion: @escaping () -> Void) {
@@ -217,6 +226,7 @@ public final class CallManager: NSObject {
     private func presentActiveCall(fromCallKit: Bool) {
         guard let session = currentSession else { return }
         let model = activeViewModel ?? ActiveCallViewModel()
+        applyDefaultAudioState(to: model)
         model.onToggleMute = { [weak self, weak model] in
             guard let self, let model else { return }
             model.isMuted.toggle()
