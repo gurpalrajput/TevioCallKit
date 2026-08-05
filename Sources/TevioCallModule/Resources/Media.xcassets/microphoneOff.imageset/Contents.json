@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "Group 1000006028.png",
+      "filename" : "microphone off.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "Group 1000006028@2x.png",
+      "filename" : "microphone off 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "Group 1000006028@3x.png",
+      "filename" : "microphone off 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

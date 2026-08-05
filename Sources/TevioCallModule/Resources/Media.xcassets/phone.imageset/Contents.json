@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "microphone off.png",
+      "filename" : "iphone.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "microphone off 1.png",
+      "filename" : "iphone 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "microphone off 2.png",
+      "filename" : "iphone 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
