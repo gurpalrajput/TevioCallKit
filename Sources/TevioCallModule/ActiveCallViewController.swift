@@ -67,7 +67,7 @@ public final class ActiveCallViewModel: ObservableObject {
     }
 
     public var speakerTitle: String {
-        speakerEnabled ? "Speaker Off" : "Speaker"
+        speakerEnabled ? "Speaker" : "Speaker Off"
     }
 
     func update(session: CallSession) {
