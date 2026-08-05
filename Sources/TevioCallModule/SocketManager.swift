@@ -288,7 +288,10 @@ public final class SocketManager: NSObject, CallTransporting {
 
     private func makeRemoteCallStatusEvent(eventName: String, items: [Any]) -> RemoteCallStatusEvent? {
         let payload = items.compactMap { $0 as? [String: Any] }.first
-        let threadId = payload?["thread_id"] as? String
+        let statusPayload = statusPayload(from: payload)
+        let threadId = statusPayload?["thread_id"] as? String
+            ?? statusPayload?["threadId"] as? String
+            ?? payload?["thread_id"] as? String
             ?? payload?["threadId"] as? String
             ?? inferredThreadID(forEventName: eventName)
         let statusValue = rawStatusValue(fromPayload: payload)
@@ -320,6 +323,11 @@ public final class SocketManager: NSObject, CallTransporting {
     private func rawStatusValue(fromPayload payload: [String: Any]?) -> String? {
         guard let payload else { return nil }
 
+        if let nestedPayload = statusPayload(from: payload),
+           let nestedStatus = rawStatusValue(fromPayload: nestedPayload) {
+            return nestedStatus
+        }
+
         let candidateKeys = ["status", "type", "data", "event", "name"]
         for key in candidateKeys {
             guard let rawValue = payload[key] else { continue }
@@ -327,6 +335,16 @@ public final class SocketManager: NSObject, CallTransporting {
             if let status = normalizedStatusValue(from: rawValue) {
                 return status
             }
+        }
+
+        return nil
+    }
+
+    private func statusPayload(from payload: [String: Any]?) -> [String: Any]? {
+        guard let payload else { return nil }
+
+        if let nestedPayload = payload["data"] as? [String: Any] {
+            return nestedPayload
         }
 
         return nil

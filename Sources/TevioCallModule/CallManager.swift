@@ -25,8 +25,10 @@ public final class CallManager: NSObject {
     private var registry: PKPushRegistry?
     private var unansweredTimer: DispatchWorkItem?
     private var elapsedTimer: Timer?
+    private var pendingDismissWorkItem: DispatchWorkItem?
     private var lastPushHandledAt: TimeInterval = 0
     private let pushDebounceInterval: TimeInterval = 1
+    private let terminalStatusDisplayDuration: TimeInterval = 2.5
     private var pendingEndStatus: CallStatus?
     private var incomingViewModel: IncomingCallViewModel?
     private var activeViewModel: ActiveCallViewModel?
@@ -125,15 +127,19 @@ public final class CallManager: NSObject {
         }
         lastPushHandledAt = now
 
+        let incomingThreadId = threadId(from: payload)
+
         if let directStatus = directTerminationStatus(from: payload) {
-            handleRemoteTermination(status: directStatus)
+            if incomingThreadId == currentSession?.payload.threadId {
+                handleRemoteTermination(status: directStatus)
+            }
             completion()
             return
         }
 
         if let session = currentSession, session.state != .idle {
-            if let threadId = (payload["thread_id"] as? String) ?? currentSession?.payload.threadId {
-                transport?.emit(status: .busy, threadId: threadId, completion: completion)
+            if let incomingThreadId, incomingThreadId != session.payload.threadId {
+                transport?.emit(status: .busy, threadId: incomingThreadId, completion: completion)
             } else {
                 completion()
             }
@@ -151,6 +157,7 @@ public final class CallManager: NSObject {
     }
 
     private func beginOutgoingCall(with payload: CallPayload) {
+        pendingDismissWorkItem?.cancel()
         stopListeningForCallStatus()
         currentSession = CallSession(payload: payload, state: .connecting)
         fetchThreadDetailsIfNeeded(threadId: payload.threadId)
@@ -165,6 +172,7 @@ public final class CallManager: NSObject {
     }
 
     private func createIncomingSession(with payload: CallPayload) {
+        pendingDismissWorkItem?.cancel()
         stopElapsedTimer()
         stopListeningForCallStatus()
         currentSession = CallSession(payload: payload, state: .ringing)
@@ -314,11 +322,12 @@ public final class CallManager: NSObject {
     private func handleRemoteTermination(status: CallStatus) {
         pendingEndStatus = nil
         guard currentSession != nil else { return }
-        finalizeCall(status: status, emitStatus: false)
+        finalizeCall(status: status, emitStatus: false, dismissAfter: terminalStatusDisplayDuration)
     }
 
-    private func finalizeCall(status: CallStatus, emitStatus: Bool) {
+    private func finalizeCall(status: CallStatus, emitStatus: Bool, dismissAfter: TimeInterval = 0) {
         let callUUID = currentSession?.callUUID
+        pendingDismissWorkItem?.cancel()
         cancelUnansweredTimer()
         stopElapsedTimer()
         audioEngine.leaveChannel()
@@ -336,19 +345,35 @@ public final class CallManager: NSObject {
         if let callUUID {
             provider.reportCall(with: callUUID, endedAt: Date(), reason: callEndedReason(for: status))
         }
+        if dismissAfter > 0 {
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.resetCallPresentationState(animated: true)
+            }
+            pendingDismissWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + dismissAfter, execute: workItem)
+            return
+        }
+
+        resetCallPresentationState(animated: true)
+    }
+
+    private func finishCallUI() {
+        pendingDismissWorkItem?.cancel()
+        cancelUnansweredTimer()
+        stopElapsedTimer()
         dismissPresentedCallUI(animated: true)
+    }
+
+    private func resetCallPresentationState(animated: Bool) {
+        pendingDismissWorkItem?.cancel()
+        pendingDismissWorkItem = nil
+        dismissPresentedCallUI(animated: animated)
         currentSession = nil
         activeViewModel = nil
         incomingViewModel = nil
         activeCallController = nil
         incomingCallController = nil
         pendingEndStatus = nil
-    }
-
-    private func finishCallUI() {
-        cancelUnansweredTimer()
-        stopElapsedTimer()
-        dismissPresentedCallUI(animated: true)
     }
 
     private func dismissPresentedCallUI(animated: Bool) {
@@ -478,6 +503,10 @@ public final class CallManager: NSObject {
         default:
             return nil
         }
+    }
+
+    private func threadId(from payload: [AnyHashable: Any]) -> String? {
+        (payload["thread_id"] as? String) ?? (payload["threadId"] as? String)
     }
 
     private func shouldClearRemoteStatus(after status: CallStatus) -> Bool {
