@@ -333,33 +333,31 @@ private struct IncomingCallIconControlButtonStyle: ButtonStyle {
     }
 }
 
-struct IncomingCallView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            IncomingCallView(model: previewModel)
-                .previewDisplayName("Incoming Call")
-            IncomingCallView(model: ipadPreviewModel)
-                .previewLayout(.fixed(width: 1024, height: 768))
-                .previewDisplayName("iPad Landscape")
-        }
-    }
+@available(iOS 17.0, *)
+#Preview("Incoming Call") {
+    IncomingCallView(model: incomingCallPreviewModel)
+}
 
-    @MainActor
-    private static var previewModel: IncomingCallViewModel {
-        let model = IncomingCallViewModel()
-        model.name = "Avery Stone"
-        model.role = "Support Specialist"
-        model.status = "Incoming Call..."
-        return model
-    }
+@available(iOS 17.0, *)
+#Preview("iPad Landscape", traits: .fixedLayout(width: 1024, height: 768)) {
+    IncomingCallView(model: incomingCallIPadPreviewModel)
+}
 
-    @MainActor
-    private static var ipadPreviewModel: IncomingCallViewModel {
-        let model = IncomingCallViewModel()
-        model.name = "Morgan Patel"
-        model.role = "Dispatch Coordinator"
-        model.status = "Incoming Call..."
-        model.callDetail = "Secure audio call"
-        return model
-    }
+@MainActor
+private var incomingCallPreviewModel: IncomingCallViewModel {
+    let model = IncomingCallViewModel()
+    model.name = "Avery Stone"
+    model.role = "Support Specialist"
+    model.status = "Incoming Call..."
+    return model
+}
+
+@MainActor
+private var incomingCallIPadPreviewModel: IncomingCallViewModel {
+    let model = IncomingCallViewModel()
+    model.name = "Morgan Patel"
+    model.role = "Dispatch Coordinator"
+    model.status = "Incoming Call..."
+    model.callDetail = "Secure audio call"
+    return model
 }
