@@ -219,7 +219,7 @@ public struct ActiveCallView: View {
             HStack(spacing: 24) {
                 ActiveCallIconControl(
                     title: model.muteTitle,
-                    imageResource: model.isMuted ? .mute : .unMute,
+                    imageResource: model.isMuted ? .unMute : .mute,
                     titleColor: palette.primaryText,
                     action: {
                         model.onToggleMute?()
@@ -228,7 +228,7 @@ public struct ActiveCallView: View {
 
                 ActiveCallIconControl(
                     title: model.speakerTitle,
-                    imageResource: model.speakerEnabled ? .speakerEnabled : .speaker,
+                    imageResource: model.speakerEnabled ? .speakerEnabled : .speakerOff,
                     titleColor: palette.primaryText,
                     action: {
                         model.onToggleSpeaker?()
