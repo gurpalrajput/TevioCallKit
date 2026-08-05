@@ -31,7 +31,7 @@ public final class SocketManager: NSObject, CallTransporting {
             namespace: String = "/",
             headers: [String: String] = [:],
             connectParams: [String: Any] = [:],
-            statusEventName: String = "call:status",
+            statusEventName: String = "call:status-1",
             statusChannelNameProvider: StatusChannelNameProvider? = nil,
             subscribeEventName: String? = "call-subscribe",
             unsubscribeEventName: String? = "call-unsubscribe",

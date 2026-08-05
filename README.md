@@ -54,7 +54,7 @@ Your app must provide:
 It supports two server patterns:
 
 1. Event-based status sync:
-   - emit and listen on one shared event like `call:status`
+   - emit and listen on one shared event like `call:status-1`
    - optionally subscribe and unsubscribe with `call-subscribe` and `call-unsubscribe`
 
 2. Channel-based status sync:
@@ -71,7 +71,7 @@ let socketManager = SocketManager(
         namespace: "/",
         headers: [:],
         connectParams: ["token": token],
-        statusEventName: "call:status",
+        statusEventName: "call:status-1",
         subscribeEventName: "call-subscribe",
         unsubscribeEventName: "call-unsubscribe"
     )
@@ -85,7 +85,7 @@ let socketManager = SocketManager(
     configuration: .init(
         socketURL: URL(string: "https://prod-notification.tevioapp.com")!,
         connectParams: ["token": token],
-        statusEventName: "call:status",
+        statusEventName: "call:status-1",
         statusChannelNameProvider: { threadId in
             "call:status-\(threadId)"
         },
