@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "Group 1000006028.png",
+      "filename" : "volume-up.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "Group 1000006028@2x.png",
+      "filename" : "volume-up 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "Group 1000006028@3x.png",
+      "filename" : "volume-up 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
@@ -19,5 +19,8 @@
   "info" : {
     "author" : "xcode",
     "version" : 1
+  },
+  "properties" : {
+    "template-rendering-intent" : "template"
   }
 }

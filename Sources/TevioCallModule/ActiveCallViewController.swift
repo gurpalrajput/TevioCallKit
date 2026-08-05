@@ -74,27 +74,27 @@ public final class ActiveCallViewModel: ObservableObject {
         isMuted ? "Mic Off" : "Mic On"
     }
 
-    public var muteSymbolName: String {
-        isMuted ? "mic.slash.fill" : "mic.fill"
+    var muteImageName: String {
+        isMuted ? "microphoneOff" : "microphoneOn"
     }
 
     public var speakerTitle: String {
         switch audioRouteState.currentRoute {
         case .receiver:
-            return "Speaker Off"
+            return "iPhone"
         case .speaker:
-            return "Speaker On"
+            return "Speaker"
         case .bluetooth:
             return "Bluetooth"
         }
     }
 
-    public var speakerSymbolName: String {
+    var speakerImageName: String {
         switch audioRouteState.currentRoute {
         case .receiver:
-            return "speaker.slash.fill"
+            return "phone"
         case .speaker:
-            return "speaker.wave.3.fill"
+            return "speakerOn"
         case .bluetooth:
             return "bluetooth"
         }
@@ -154,7 +154,7 @@ public final class ActiveCallViewModel: ObservableObject {
     func routeLabel(for route: CallAudioRouteState.Route) -> String {
         switch route {
         case .receiver:
-            return "iPhone"
+            return "iPhone Earpiece"
         case .speaker:
             return "Speaker"
         case .bluetooth(let name):
@@ -286,7 +286,7 @@ public struct ActiveCallView: View {
             HStack(spacing: 24) {
                 ActiveCallIconControl(
                     title: model.muteTitle,
-                    systemImageName: model.muteSymbolName,
+                    imageName: model.muteImageName,
                     titleColor: palette.primaryText,
                     accentColor: model.isMuted ? palette.warningText : palette.primaryAccent,
                     action: {
@@ -296,7 +296,7 @@ public struct ActiveCallView: View {
 
                 ActiveCallIconControl(
                     title: model.speakerTitle,
-                    systemImageName: model.speakerSymbolName,
+                    imageName: model.speakerImageName,
                     titleColor: palette.primaryText,
                     accentColor: palette.primaryAccent,
                     action: {
@@ -396,7 +396,7 @@ private struct ActiveCallLayoutMetrics {
 
 private struct ActiveCallIconControl: View {
     let title: String
-    let systemImageName: String
+    let imageName: String
     let titleColor: Color
     let accentColor: Color
     let action: () -> Void
@@ -414,9 +414,11 @@ private struct ActiveCallIconControl: View {
                         .frame(width: 74, height: 74)
                         .shadow(color: .black.opacity(0.14), radius: 18, y: 10)
 
-                    Image(systemName: systemImageName)
-                        .font(.system(size: 24, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
+                    Image(imageName, bundle: .module)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 26, height: 26)
                         .foregroundStyle(accentColor)
                 }
 
@@ -557,5 +559,3 @@ private var activeCallIPadPreviewModel: ActiveCallViewModel {
     model.callDetail = "End-to-end encrypted voice call"
     return model
 }
-
-

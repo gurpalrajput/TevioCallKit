@@ -11,6 +11,8 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
     private var payload: CallPayload?
     private let audioSession = AVAudioSession.sharedInstance()
     private var routeChangeObserver: NSObjectProtocol?
+    private var requestedRoute: CallAudioRouteState.Route = .receiver
+    private var isApplyingRequestedRoute = false
 
     public override init() {
         super.init()
@@ -28,6 +30,7 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
         agoraEngine = AgoraRtcEngineKit.sharedEngine(withAppId: payload.appId, delegate: self)
         agoraEngine?.disableVideo()
         agoraEngine?.setChannelProfile(.communication)
+        requestedRoute = .receiver
         selectAudioRoute(.receiver)
     }
 
@@ -60,31 +63,12 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
     }
 
     public func selectAudioRoute(_ route: CallAudioRouteState.Route) {
-        do {
-            switch route {
-            case .receiver:
-                try audioSession.setPreferredInput(builtInMicInput())
-                try audioSession.overrideOutputAudioPort(.none)
-                agoraEngine?.setEnableSpeakerphone(false)
-            case .speaker:
-                try audioSession.setPreferredInput(builtInMicInput())
-                try audioSession.overrideOutputAudioPort(.speaker)
-                agoraEngine?.setEnableSpeakerphone(true)
-            case .bluetooth(let name):
-                try audioSession.overrideOutputAudioPort(.none)
-                if let bluetoothInput = bluetoothInputs().first(where: { normalizedPortName($0.portName) == normalizedPortName(name) }) ?? bluetoothInputs().first {
-                    try audioSession.setPreferredInput(bluetoothInput)
-                }
-                agoraEngine?.setEnableSpeakerphone(false)
-            }
-        } catch {
-            agoraEngine?.setEnableSpeakerphone(route == .speaker)
-        }
-
-        notifyAudioRouteChanged()
+        requestedRoute = route
+        applyRequestedRoute()
     }
 
     public func didActivateAudioSession(_ audioSession: AVAudioSession) {
+        applyRequestedRoute(notifyAfterApplying: false)
         notifyAudioRouteChanged()
     }
 }
@@ -104,6 +88,44 @@ extension AgoraCallAudioEngine: AgoraRtcEngineDelegate {
 }
 
 private extension AgoraCallAudioEngine {
+    func applyRequestedRoute(notifyAfterApplying: Bool = true) {
+        guard !isApplyingRequestedRoute else { return }
+        isApplyingRequestedRoute = true
+        defer { isApplyingRequestedRoute = false }
+
+        let route = resolvedRequestedRoute()
+        do {
+            switch route {
+            case .receiver:
+                try audioSession.overrideOutputAudioPort(.none)
+                try audioSession.setPreferredInput(nil)
+                if let builtInMicInput = builtInMicInput() {
+                    try audioSession.setPreferredInput(builtInMicInput)
+                }
+                agoraEngine?.setEnableSpeakerphone(false)
+            case .speaker:
+                try audioSession.overrideOutputAudioPort(.speaker)
+                try audioSession.setPreferredInput(nil)
+                if let builtInMicInput = builtInMicInput() {
+                    try audioSession.setPreferredInput(builtInMicInput)
+                }
+                agoraEngine?.setEnableSpeakerphone(true)
+            case .bluetooth(let name):
+                try audioSession.overrideOutputAudioPort(.none)
+                try audioSession.setPreferredInput(nil)
+                if let bluetoothInput = bluetoothInputs().first(where: { normalizedPortName($0.portName) == normalizedPortName(name) }) ?? bluetoothInputs().first {
+                    try audioSession.setPreferredInput(bluetoothInput)
+                }
+                agoraEngine?.setEnableSpeakerphone(false)
+            }
+        } catch {
+            agoraEngine?.setEnableSpeakerphone(route == .speaker)
+        }
+
+        if notifyAfterApplying {
+            notifyAudioRouteChanged()
+        }
+    }
     func startObservingAudioRouteChanges() {
         guard routeChangeObserver == nil else { return }
         routeChangeObserver = NotificationCenter.default.addObserver(
@@ -111,12 +133,38 @@ private extension AgoraCallAudioEngine {
             object: audioSession,
             queue: .main
         ) { [weak self] _ in
-            self?.notifyAudioRouteChanged()
+            self?.handleAudioRouteChange()
         }
+    }
+
+    func handleAudioRouteChange() {
+        guard !isApplyingRequestedRoute else { return }
+
+        let routeState = buildAudioRouteState()
+        guard shouldReapplyRequestedRoute(for: routeState) else {
+            onAudioRouteChanged?(routeState)
+            return
+        }
+
+        applyRequestedRoute()
     }
 
     func notifyAudioRouteChanged() {
         onAudioRouteChanged?(buildAudioRouteState())
+    }
+
+    func shouldReapplyRequestedRoute(for routeState: CallAudioRouteState) -> Bool {
+        let requestedRoute = resolvedRequestedRoute()
+        if routeState.currentRoute == requestedRoute {
+            return false
+        }
+
+        switch requestedRoute {
+        case .receiver, .speaker:
+            return true
+        case .bluetooth:
+            return routeState.availableRoutes.contains(requestedRoute)
+        }
     }
 
     func buildAudioRouteState() -> CallAudioRouteState {
@@ -132,6 +180,20 @@ private extension AgoraCallAudioEngine {
         }
 
         return CallAudioRouteState(currentRoute: currentRoute, availableRoutes: availableRoutes)
+    }
+
+    func resolvedRequestedRoute() -> CallAudioRouteState.Route {
+        switch requestedRoute {
+        case .bluetooth(let name):
+            return bluetoothInputs().map { CallAudioRouteState.Route.bluetooth(name: $0.portName) }.first(where: {
+                if case .bluetooth(let candidateName) = $0 {
+                    return normalizedPortName(candidateName) == normalizedPortName(name)
+                }
+                return false
+            }) ?? requestedRoute
+        case .receiver, .speaker:
+            return requestedRoute
+        }
     }
 
     func resolvedCurrentRoute(bluetoothRoutes: [CallAudioRouteState.Route]) -> CallAudioRouteState.Route {
