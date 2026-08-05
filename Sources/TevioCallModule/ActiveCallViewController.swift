@@ -9,14 +9,12 @@ public final class ActiveCallViewModel: ObservableObject {
     @Published var status = "Connecting..."
     @Published var remoteMuteText = ""
     @Published var isMuted = false
-    @Published var audioRouteState = CallAudioRouteState(currentRoute: .receiver, availableRoutes: [.receiver, .speaker])
+    @Published var speakerEnabled = false
     @Published var callDetail = "Secure audio call"
     @Published var isConnecting = true
     @Published var imageURL: URL?
-    @Published var isShowingAudioRoutePicker = false
     public var onToggleMute: (() -> Void)?
     public var onToggleSpeaker: (() -> Void)?
-    public var onSelectAudioRoute: ((CallAudioRouteState.Route) -> Void)?
     public var onEnd: (() -> Void)?
 
     public init(
@@ -25,14 +23,12 @@ public final class ActiveCallViewModel: ObservableObject {
         status: String = "Connecting...",
         remoteMuteText: String = "",
         isMuted: Bool = false,
-        audioRouteState: CallAudioRouteState = CallAudioRouteState(currentRoute: .receiver, availableRoutes: [.receiver, .speaker]),
+        speakerEnabled: Bool = false,
         callDetail: String = "Secure audio call",
         isConnecting: Bool = true,
         imageURL: URL? = nil,
-        isShowingAudioRoutePicker: Bool = false,
         onToggleMute: (() -> Void)? = nil,
         onToggleSpeaker: (() -> Void)? = nil,
-        onSelectAudioRoute: ((CallAudioRouteState.Route) -> Void)? = nil,
         onEnd: (() -> Void)? = nil
     ) {
         self.name = name
@@ -40,14 +36,12 @@ public final class ActiveCallViewModel: ObservableObject {
         self.status = status
         self.remoteMuteText = remoteMuteText
         self.isMuted = isMuted
-        self.audioRouteState = audioRouteState
+        self.speakerEnabled = speakerEnabled
         self.callDetail = callDetail
         self.isConnecting = isConnecting
         self.imageURL = imageURL
-        self.isShowingAudioRoutePicker = isShowingAudioRoutePicker
         self.onToggleMute = onToggleMute
         self.onToggleSpeaker = onToggleSpeaker
-        self.onSelectAudioRoute = onSelectAudioRoute
         self.onEnd = onEnd
     }
 
@@ -56,7 +50,6 @@ public final class ActiveCallViewModel: ObservableObject {
         configuration: CallUIConfiguration,
         onToggleMute: (() -> Void)? = nil,
         onToggleSpeaker: (() -> Void)? = nil,
-        onSelectAudioRoute: ((CallAudioRouteState.Route) -> Void)? = nil,
         onEnd: (() -> Void)? = nil
     ) {
         self.init(
@@ -65,48 +58,16 @@ public final class ActiveCallViewModel: ObservableObject {
             status: configuration.connectingText,
             onToggleMute: onToggleMute,
             onToggleSpeaker: onToggleSpeaker,
-            onSelectAudioRoute: onSelectAudioRoute,
             onEnd: onEnd
         )
     }
 
     public var muteTitle: String {
-        isMuted ? "Mic Off" : "Mic On"
-    }
-
-    var muteImageName: String {
-        isMuted ? "microphoneOff" : "microphoneOn"
+        isMuted ? "Unmute" : "Mute"
     }
 
     public var speakerTitle: String {
-        switch audioRouteState.currentRoute {
-        case .receiver:
-            return "iPhone"
-        case .speaker:
-            return "Speaker"
-        case .bluetooth:
-            return "Bluetooth"
-        }
-    }
-
-    var speakerImageName: String {
-        switch audioRouteState.currentRoute {
-        case .receiver:
-            return "phone"
-        case .speaker:
-            return "speakerOn"
-        case .bluetooth:
-            return "bluetooth"
-        }
-    }
-
-    public var hasBluetoothRoutes: Bool {
-        audioRouteState.availableRoutes.contains {
-            if case .bluetooth = $0 {
-                return true
-            }
-            return false
-        }
+        speakerEnabled ? "Speaker Off" : "Speaker"
     }
 
     func update(session: CallSession) {
@@ -132,13 +93,6 @@ public final class ActiveCallViewModel: ObservableObject {
         remoteMuteText = isMuted ? "Remote muted" : ""
     }
 
-    func updateAudioRouteState(_ routeState: CallAudioRouteState) {
-        audioRouteState = routeState
-        if !hasBluetoothRoutes {
-            isShowingAudioRoutePicker = false
-        }
-    }
-
     var remoteMuteVisible: Bool {
         !remoteMuteText.isEmpty
     }
@@ -149,17 +103,6 @@ public final class ActiveCallViewModel: ObservableObject {
 
     var detailText: String {
         remoteMuteVisible ? remoteMuteText : callDetail
-    }
-
-    func routeLabel(for route: CallAudioRouteState.Route) -> String {
-        switch route {
-        case .receiver:
-            return "iPhone Earpiece"
-        case .speaker:
-            return "Speaker"
-        case .bluetooth(let name):
-            return name
-        }
     }
 }
 
@@ -202,16 +145,6 @@ public struct ActiveCallView: View {
                         .padding(.vertical, metrics.verticalPadding)
                     }
                 }
-            }
-            .confirmationDialog("Audio Output", isPresented: $model.isShowingAudioRoutePicker, titleVisibility: .visible) {
-                ForEach(Array(model.audioRouteState.availableRoutes.enumerated()), id: \.offset) { _, route in
-                    Button(model.routeLabel(for: route)) {
-                        model.onSelectAudioRoute?(route)
-                    }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Choose where call audio should play.")
             }
             .onAppear {
                 withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
@@ -286,13 +219,8 @@ public struct ActiveCallView: View {
             HStack(spacing: 24) {
                 ActiveCallIconControl(
                     title: model.muteTitle,
-<<<<<<< HEAD
                     imageResource: model.isMuted ? .unMute : .mute,
-=======
-                    imageName: model.muteImageName,
->>>>>>> 3e85de734279f0aae4909079677e9ccf004381a0
                     titleColor: palette.primaryText,
-                    accentColor: model.isMuted ? palette.warningText : palette.primaryAccent,
                     action: {
                         model.onToggleMute?()
                     }
@@ -300,13 +228,8 @@ public struct ActiveCallView: View {
 
                 ActiveCallIconControl(
                     title: model.speakerTitle,
-<<<<<<< HEAD
                     imageResource: model.speakerEnabled ? .speakerEnabled : .speakerOff,
-=======
-                    imageName: model.speakerImageName,
->>>>>>> 3e85de734279f0aae4909079677e9ccf004381a0
                     titleColor: palette.primaryText,
-                    accentColor: palette.primaryAccent,
                     action: {
                         model.onToggleSpeaker?()
                     }
@@ -404,32 +327,15 @@ private struct ActiveCallLayoutMetrics {
 
 private struct ActiveCallIconControl: View {
     let title: String
-    let imageName: String
+    let imageResource: ImageResource
     let titleColor: Color
-    let accentColor: Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            Circle()
-                                .strokeBorder(Color.white.opacity(0.24), lineWidth: 1)
-                        )
-                        .frame(width: 74, height: 74)
-                        .shadow(color: .black.opacity(0.14), radius: 18, y: 10)
-
-                    Image(imageName, bundle: .module)
-                        .renderingMode(.template)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 26, height: 26)
-                        .foregroundStyle(accentColor)
-                }
-
+            VStack(spacing: 12) {
+                Image(imageResource)
+                    .renderingMode(.original)
                 Text(title)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(titleColor)
@@ -495,10 +401,6 @@ private struct ActiveCallPalette {
         colorScheme == .dark ? Color(red: 1.0, green: 0.86, blue: 0.55) : Color(red: 0.65, green: 0.41, blue: 0.05)
     }
 
-    var primaryAccent: Color {
-        colorScheme == .dark ? Color(red: 0.62, green: 0.86, blue: 1.0) : Color(red: 0.13, green: 0.42, blue: 0.92)
-    }
-
     var capsuleFill: Color {
         colorScheme == .dark ? Color.white.opacity(0.09) : Color.white.opacity(0.58)
     }
@@ -516,54 +418,52 @@ private struct ActiveCallIconControlButtonStyle: ButtonStyle {
     }
 }
 
-@available(iOS 17.0, *)
-#Preview("Active Call") {
-    ActiveCallView(model: activeCallConnectedPreviewModel)
-}
 
-@available(iOS 17.0, *)
-#Preview("Remote Muted") {
-    ActiveCallView(model: activeCallMutedPreviewModel)
-}
 
-@available(iOS 17.0, *)
-#Preview("iPad Landscape", traits: .fixedLayout(width: 1024, height: 768)) {
-    ActiveCallView(model: activeCallIPadPreviewModel)
-}
+struct ActiveCallView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            ActiveCallView(model: connectedPreviewModel)
+                .previewDisplayName("Active Call")
+            ActiveCallView(model: mutedPreviewModel)
+                .previewDisplayName("Remote Muted")
+            ActiveCallView(model: ipadPreviewModel)
+                .previewLayout(.fixed(width: 1024, height: 768))
+                .previewDisplayName("iPad Landscape")
+        }
+    }
 
-@MainActor
-private var activeCallConnectedPreviewModel: ActiveCallViewModel {
-    let model = ActiveCallViewModel()
-    model.name = "Avery Stone"
-    model.role = "Support Specialist"
-    model.status = "03:42"
-    model.isConnecting = false
-    return model
-}
+    @MainActor
+    private static var connectedPreviewModel: ActiveCallViewModel {
+        let model = ActiveCallViewModel()
+        model.name = "Avery Stone"
+        model.role = "Support Specialist"
+        model.status = "03:42"
+        model.isConnecting = false
+        return model
+    }
 
-@MainActor
-private var activeCallMutedPreviewModel: ActiveCallViewModel {
-    let model = ActiveCallViewModel()
-    model.name = "Jordan Mills"
-    model.role = "Clinical Advisor"
-    model.status = "Connecting..."
-    model.remoteMuteText = "Remote muted"
-    model.isMuted = true
-    model.audioRouteState = CallAudioRouteState(currentRoute: .speaker, availableRoutes: [.receiver, .speaker])
-    return model
-}
+    @MainActor
+    private static var mutedPreviewModel: ActiveCallViewModel {
+        let model = ActiveCallViewModel()
+        model.name = "Jordan Mills"
+        model.role = "Clinical Advisor"
+        model.status = "Connecting..."
+        model.remoteMuteText = "Remote muted"
+        model.isMuted = true
+        model.speakerEnabled = true
+        return model
+    }
 
-@MainActor
-private var activeCallIPadPreviewModel: ActiveCallViewModel {
-    let model = ActiveCallViewModel()
-    model.name = "Morgan Patel"
-    model.role = "Dispatch Coordinator"
-    model.status = "12:08"
-    model.isConnecting = false
-    model.audioRouteState = CallAudioRouteState(
-        currentRoute: .bluetooth(name: "AirPods Pro"),
-        availableRoutes: [.receiver, .speaker, .bluetooth(name: "AirPods Pro")]
-    )
-    model.callDetail = "End-to-end encrypted voice call"
-    return model
+    @MainActor
+    private static var ipadPreviewModel: ActiveCallViewModel {
+        let model = ActiveCallViewModel()
+        model.name = "Morgan Patel"
+        model.role = "Dispatch Coordinator"
+        model.status = "12:08"
+        model.isConnecting = false
+        model.speakerEnabled = true
+        model.callDetail = "End-to-end encrypted voice call"
+        return model
+    }
 }

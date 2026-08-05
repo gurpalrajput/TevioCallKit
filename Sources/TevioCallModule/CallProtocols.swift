@@ -2,22 +2,6 @@ import AVFoundation
 import Foundation
 import UIKit
 
-public struct CallAudioRouteState: Equatable {
-    public enum Route: Equatable {
-        case receiver
-        case speaker
-        case bluetooth(name: String)
-    }
-
-    public let currentRoute: Route
-    public let availableRoutes: [Route]
-
-    public init(currentRoute: Route, availableRoutes: [Route]) {
-        self.currentRoute = currentRoute
-        self.availableRoutes = availableRoutes
-    }
-}
-
 public protocol CallTransporting: AnyObject {
     func connectIfNeeded()
     func emit(status: CallStatus, threadId: String, completion: (() -> Void)?)
@@ -44,14 +28,11 @@ public protocol CallAudioEngining: AnyObject {
     var onRemoteUserJoined: (() -> Void)? { get set }
     var onRemoteUserLeft: (() -> Void)? { get set }
     var onRemoteMuteChanged: ((Bool) -> Void)? { get set }
-    var onAudioRouteChanged: ((CallAudioRouteState) -> Void)? { get set }
     func configure(with payload: CallPayload)
     func joinChannel()
     func leaveChannel()
     func setMuted(_ isMuted: Bool)
     func setSpeakerEnabled(_ isEnabled: Bool)
-    func currentAudioRouteState() -> CallAudioRouteState
-    func selectAudioRoute(_ route: CallAudioRouteState.Route)
     func didActivateAudioSession(_ audioSession: AVAudioSession)
 }
 
@@ -59,7 +40,6 @@ public final class NoopCallAudioEngine: CallAudioEngining {
     public var onRemoteUserJoined: (() -> Void)?
     public var onRemoteUserLeft: (() -> Void)?
     public var onRemoteMuteChanged: ((Bool) -> Void)?
-    public var onAudioRouteChanged: ((CallAudioRouteState) -> Void)?
 
     public init() {}
 
@@ -70,12 +50,6 @@ public final class NoopCallAudioEngine: CallAudioEngining {
     public func leaveChannel() {}
     public func setMuted(_ isMuted: Bool) {}
     public func setSpeakerEnabled(_ isEnabled: Bool) {}
-    public func currentAudioRouteState() -> CallAudioRouteState {
-        CallAudioRouteState(currentRoute: .receiver, availableRoutes: [.receiver, .speaker])
-    }
-    public func selectAudioRoute(_ route: CallAudioRouteState.Route) {
-        onAudioRouteChanged?(CallAudioRouteState(currentRoute: route, availableRoutes: [.receiver, .speaker]))
-    }
     public func didActivateAudioSession(_ audioSession: AVAudioSession) {}
 }
 

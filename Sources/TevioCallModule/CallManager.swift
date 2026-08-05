@@ -112,23 +112,13 @@ public final class CallManager: NSObject {
 
     func setSpeakerEnabled(_ isEnabled: Bool) {
         audioEngine.setSpeakerEnabled(isEnabled)
-        syncActiveAudioRouteState(audioEngine.currentAudioRouteState())
-    }
-
-    func selectAudioRoute(_ route: CallAudioRouteState.Route) {
-        audioEngine.selectAudioRoute(route)
-        syncActiveAudioRouteState(audioEngine.currentAudioRouteState())
     }
 
     private func applyDefaultAudioState(to model: ActiveCallViewModel? = nil) {
         model?.isMuted = defaultMutedState
+        model?.speakerEnabled = defaultSpeakerEnabledState
         setMuted(defaultMutedState)
         setSpeakerEnabled(defaultSpeakerEnabledState)
-        model?.updateAudioRouteState(audioEngine.currentAudioRouteState())
-    }
-
-    private func syncActiveAudioRouteState(_ routeState: CallAudioRouteState) {
-        activeViewModel?.updateAudioRouteState(routeState)
     }
 
     public func handleIncomingPush(payload: [AnyHashable: Any], completion: @escaping () -> Void) {
@@ -254,23 +244,13 @@ public final class CallManager: NSObject {
         }
         model.onToggleSpeaker = { [weak self, weak model] in
             guard let self, let model else { return }
-            if model.hasBluetoothRoutes {
-                model.isShowingAudioRoutePicker = true
-                return
-            }
-
-            let nextRoute: CallAudioRouteState.Route = model.audioRouteState.currentRoute == .speaker ? .receiver : .speaker
-            self.selectAudioRoute(nextRoute)
-        }
-        model.onSelectAudioRoute = { [weak self, weak model] route in
-            model?.isShowingAudioRoutePicker = false
-            self?.selectAudioRoute(route)
+            model.speakerEnabled.toggle()
+            self.setSpeakerEnabled(model.speakerEnabled)
         }
         model.onEnd = { [weak self] in
             self?.endCurrentCall()
         }
         model.update(session: session)
-        model.updateAudioRouteState(audioEngine.currentAudioRouteState())
         activeViewModel = model
         let controller = UIHostingController(rootView: ActiveCallView(model: model))
         controller.modalPresentationStyle = .fullScreen
@@ -471,12 +451,6 @@ public final class CallManager: NSObject {
         audioEngine.onRemoteMuteChanged = { [weak self] isMuted in
             DispatchQueue.main.async {
                 self?.activeViewModel?.updateRemoteMuted(isMuted)
-            }
-        }
-
-        audioEngine.onAudioRouteChanged = { [weak self] routeState in
-            DispatchQueue.main.async {
-                self?.syncActiveAudioRouteState(routeState)
             }
         }
     }
