@@ -112,6 +112,7 @@ public final class CallManager: NSObject {
 
     func setSpeakerEnabled(_ isEnabled: Bool) {
         audioEngine.setSpeakerEnabled(isEnabled)
+        
     }
 
     private func applyDefaultAudioState(to model: ActiveCallViewModel? = nil) {
