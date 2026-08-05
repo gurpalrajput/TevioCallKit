@@ -29,6 +29,8 @@ public final class CallManager: NSObject {
     private var lastPushHandledAt: TimeInterval = 0
     private let pushDebounceInterval: TimeInterval = 1
     private let terminalStatusDisplayDuration: TimeInterval = 2.5
+    private let busyRetryInterval: TimeInterval = 0.6
+    private let busyRetryCount = 3
     private var pendingEndStatus: CallStatus?
     private var incomingViewModel: IncomingCallViewModel?
     private var activeViewModel: ActiveCallViewModel?
@@ -139,7 +141,7 @@ public final class CallManager: NSObject {
 
         if let session = currentSession, session.state != .idle {
             if let incomingThreadId, incomingThreadId != session.payload.threadId {
-                transport?.emit(status: .busy, threadId: incomingThreadId, completion: completion)
+                emitBusyStatus(for: incomingThreadId, whileActiveThreadIdIs: session.payload.threadId, completion: completion)
             } else {
                 completion()
             }
@@ -507,6 +509,30 @@ public final class CallManager: NSObject {
 
     private func threadId(from payload: [AnyHashable: Any]) -> String? {
         (payload["thread_id"] as? String) ?? (payload["threadId"] as? String)
+    }
+
+    private func emitBusyStatus(
+        for threadId: String,
+        whileActiveThreadIdIs activeThreadId: String,
+        completion: @escaping () -> Void
+    ) {
+        transport?.emit(status: .busy, threadId: threadId, completion: completion)
+
+        guard busyRetryCount > 1 else { return }
+
+        for attempt in 1..<busyRetryCount {
+            let deadline = DispatchTime.now() + (busyRetryInterval * Double(attempt))
+            DispatchQueue.main.asyncAfter(deadline: deadline) { [weak self] in
+                guard
+                    let self,
+                    self.currentSession?.payload.threadId == activeThreadId
+                else {
+                    return
+                }
+
+                self.transport?.emit(status: .busy, threadId: threadId, completion: nil)
+            }
+        }
     }
 
     private func shouldClearRemoteStatus(after status: CallStatus) -> Bool {
