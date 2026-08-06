@@ -1,7 +1,11 @@
 import AVFoundation
+#if canImport(CallKit) && !targetEnvironment(macCatalyst)
 import CallKit
+#endif
 import Foundation
+#if canImport(PushKit) && !targetEnvironment(macCatalyst)
 import PushKit
+#endif
 import SwiftUI
 import UIKit
 
@@ -15,14 +19,18 @@ public final class CallManager: NSObject {
     private let audioEngine: CallAudioEngining
     private let configuration: CallUIConfiguration
 
+#if canImport(CallKit) && !targetEnvironment(macCatalyst)
     private lazy var provider: CXProvider = {
         let providerConfiguration = CXProviderConfiguration(localizedName: configuration.appName)
         providerConfiguration.supportsVideo = false
         providerConfiguration.includesCallsInRecents = true
         return CXProvider(configuration: providerConfiguration)
     }()
+#endif
 
+#if canImport(PushKit) && !targetEnvironment(macCatalyst)
     private var registry: PKPushRegistry?
+#endif
     private var unansweredTimer: DispatchWorkItem?
     private var elapsedTimer: Timer?
     private var pendingDismissWorkItem: DispatchWorkItem?
@@ -54,15 +62,19 @@ public final class CallManager: NSObject {
         self.audioEngine = audioEngine
         self.configuration = configuration
         super.init()
+        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
         provider.setDelegate(self, queue: nil)
+        #endif
         bindAudioCallbacks()
     }
 
     public func start() {
+        #if canImport(PushKit) && !targetEnvironment(macCatalyst)
         let registry = PKPushRegistry(queue: .main)
         registry.delegate = self
         registry.desiredPushTypes = [.voIP]
         self.registry = registry
+        #endif
     }
 
     public func startOutgoingCall(request: OutgoingCallRequest) {
@@ -81,10 +93,15 @@ public final class CallManager: NSObject {
     }
 
     public func answerCurrentCall() {
-        guard let uuid = currentSession?.callUUID else { return }
         pendingEndStatus = nil
+        guard let uuid = currentSession?.callUUID else { return }
+        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
         let action = CXAnswerCallAction(call: uuid)
         CXCallController().request(CXTransaction(action: action)) { _ in }
+        #else
+        _ = uuid
+        handleAnsweredCall(fromCallKit: false)
+        #endif
     }
 
     public func declineCurrentCall() {
@@ -97,6 +114,7 @@ public final class CallManager: NSObject {
             finalizeCall(status: status, emitStatus: true)
             return
         }
+        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
         let action = CXEndCallAction(call: uuid)
         CXCallController().request(CXTransaction(action: action)) { [weak self] error in
             guard let self, error != nil else { return }
@@ -104,6 +122,10 @@ public final class CallManager: NSObject {
                 self.finalizeCall(status: status, emitStatus: true)
             }
         }
+        #else
+        _ = uuid
+        finalizeCall(status: status, emitStatus: true)
+        #endif
     }
 
     func setMuted(_ isMuted: Bool) {
@@ -192,6 +214,7 @@ public final class CallManager: NSObject {
             return
         }
 
+        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
         let update = CXCallUpdate()
         update.localizedCallerName = session.payload.callerName
         update.hasVideo = false
@@ -212,6 +235,14 @@ public final class CallManager: NSObject {
                 completion()
             }
         }
+        #else
+        startUnansweredTimer()
+        transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
+        if host?.isAppInForeground == true {
+            presentIncomingCall()
+        }
+        completion()
+        #endif
     }
 
     private func presentIncomingCall() {
@@ -345,9 +376,11 @@ public final class CallManager: NSObject {
         stopListeningForCallStatus()
         updateActiveCallStatus(text: message(for: status))
         stopRingtone()
+        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
         if let callUUID {
             provider.reportCall(with: callUUID, endedAt: Date(), reason: callEndedReason(for: status))
         }
+        #endif
         if dismissAfter > 0 {
             let workItem = DispatchWorkItem { [weak self] in
                 self?.resetCallPresentationState(animated: true)
@@ -544,21 +577,9 @@ public final class CallManager: NSObject {
             return false
         }
     }
-
-    private func callEndedReason(for status: CallStatus) -> CXCallEndedReason {
-        switch status {
-        case .busy, .declined:
-            return .remoteEnded
-        case .ended:
-            return .remoteEnded
-        case .notAnswered:
-            return .unanswered
-        case .none, .visible:
-            return .failed
-        }
-    }
 }
 
+#if canImport(PushKit) && !targetEnvironment(macCatalyst)
 extension CallManager: PKPushRegistryDelegate {
     public func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
         let token = pushCredentials.token.map { String(format: "%02x", $0) }.joined()
@@ -569,7 +590,9 @@ extension CallManager: PKPushRegistryDelegate {
         handleIncomingPush(payload: payload.dictionaryPayload, completion: completion)
     }
 }
+#endif
 
+#if canImport(CallKit) && !targetEnvironment(macCatalyst)
 extension CallManager: CXProviderDelegate {
     public func providerDidReset(_ provider: CXProvider) {
         finalizeCall(status: .ended, emitStatus: false)
@@ -593,4 +616,18 @@ extension CallManager: CXProviderDelegate {
             audioEngine.joinChannel()
         }
     }
+
+    private func callEndedReason(for status: CallStatus) -> CXCallEndedReason {
+        switch status {
+        case .busy, .declined:
+            return .remoteEnded
+        case .ended:
+            return .remoteEnded
+        case .notAnswered:
+            return .unanswered
+        case .none, .visible:
+            return .failed
+        }
+    }
 }
+#endif

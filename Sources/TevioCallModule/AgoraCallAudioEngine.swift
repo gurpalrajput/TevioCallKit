@@ -1,6 +1,9 @@
 import AVFoundation
+#if canImport(AgoraRtcKit) && !targetEnvironment(macCatalyst)
 import AgoraRtcKit
+#endif
 
+#if canImport(AgoraRtcKit) && !targetEnvironment(macCatalyst)
 public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
     public var onRemoteUserJoined: (() -> Void)?
     public var onRemoteUserLeft: (() -> Void)?
@@ -61,3 +64,26 @@ extension AgoraCallAudioEngine: AgoraRtcEngineDelegate {
         onRemoteMuteChanged?(state == .stopped)
     }
 }
+#else
+public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
+    public var onRemoteUserJoined: (() -> Void)?
+    public var onRemoteUserLeft: (() -> Void)?
+    public var onRemoteMuteChanged: ((Bool) -> Void)?
+
+    public override init() {
+        super.init()
+    }
+
+    public func configure(with payload: CallPayload) {}
+
+    public func joinChannel() {}
+
+    public func leaveChannel() {}
+
+    public func setMuted(_ isMuted: Bool) {}
+
+    public func setSpeakerEnabled(_ isEnabled: Bool) {}
+
+    public func didActivateAudioSession(_ audioSession: AVAudioSession) {}
+}
+#endif

@@ -13,6 +13,19 @@ Shared Swift Package for Tevio voice calling across Customer, Vendor, and Courie
 - Optional `AgoraCallAudioEngine` when `AgoraRtcKit` is available to the consuming app
 - `SocketManager` for Socket.IO-based status emit/listen flows
 
+## Platform support
+
+- `iOS 15+`
+- `iPadOS 15+`
+- `Mac Catalyst 15+`
+
+### Mac Catalyst notes
+
+- the package now builds for Mac Catalyst
+- `CallKit` and `PushKit` integrations are disabled on Mac Catalyst because those iPhone-specific flows are not used there
+- the bundled `AgoraCallAudioEngine` only uses the Agora binary when that SDK is available for the current platform
+- the current `AgoraRtcEngine_iOS` package in this project does not ship a Mac Catalyst slice, so real call audio on Mac Catalyst still requires a Catalyst-compatible `CallAudioEngining` implementation
+
 ## Host app integration
 
 1. Add `TevioCallModule` as a local package dependency.
@@ -197,6 +210,7 @@ let callManager = CallManager(
 socketManager.establishConnection()
 callManager.start()
 ```
+
 
 ## Screen data
 
