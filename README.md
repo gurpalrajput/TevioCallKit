@@ -123,21 +123,31 @@ let socketManager = SocketManager(
 
 - `handleIncomingPush(payload:completion:)` creates a session
 - the package starts listening for remote status updates for that `thread_id`
-- CallKit is informed through `reportNewIncomingCall`
-- if the app is in foreground, `presentIncomingCall(_:)` is called on your host coordinator
+- if the app is in foreground, the package stays on the custom in-app flow
+- `presentIncomingCall(_:)` is called on your host coordinator
 - the incoming SwiftUI screen is shown
+- CallKit is not reported for that same foreground call, which avoids duplicate surfaces
 - ringtone starts if `ringtoneURL` is configured
+
+### Incoming call in background or on the lock screen
+
+- `handleIncomingPush(payload:completion:)` creates a session
+- CallKit is informed through `reportNewIncomingCall`
+- the package starts listening for remote status updates for that `thread_id`
+- if the app later returns to foreground, the host can still present the package UI as needed
 
 ### Accept flow
 
 - tapping Accept in the incoming screen triggers `answerCurrentCall()`
-- a `CXAnswerCallAction` is requested
-- `provider(_:perform: CXAnswerCallAction)` moves the session to connecting
+- for a foreground custom call, the package answers immediately without going through `CXAnswerCallAction`
+- for a background / lock-screen CallKit call, `CXAnswerCallAction` is still used
 - ringtone stops
 - your host coordinator is asked to prepare for answered state
 - the active-call screen is presented
 - the Agora audio engine is configured
-- audio joins when CallKit activates the audio session
+- `call-accepted` is emitted so the remote side can sync the answer state
+- audio joins immediately for the foreground custom flow
+- audio joins when CallKit activates the audio session for the CallKit flow
 - when a remote user joins, the package starts the elapsed timer and updates the active screen
 
 ### Decline flow
@@ -161,7 +171,13 @@ let socketManager = SocketManager(
   - then `call-no-status`
 - the active screen is dismissed
 - the Agora engine leaves the channel
-- CallKit is ended and cleared
+- CallKit is ended and cleared only when that call was actually reported to CallKit
+
+### Remote accept flow
+
+- if socket status for the current `thread_id` becomes `call-accepted`
+- the outgoing side moves from ringing to connecting
+- the local screen stays in the package UI flow and does not redirect into CallKit
 
 ### Remote termination flow
 

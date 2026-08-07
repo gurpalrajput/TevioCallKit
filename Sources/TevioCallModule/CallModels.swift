@@ -3,6 +3,7 @@ import Foundation
 public enum CallStatus: String, Codable, CaseIterable {
     case none = "call-no-status"
     case visible = "call-visible"
+    case accepted = "call-accepted"
     case notAnswered = "call-not-answered"
     case declined = "call-declined"
     case ended = "call-ended"

@@ -44,6 +44,7 @@ public final class CallManager: NSObject {
     private weak var activeCallController: UIViewController?
     private var audioPlayer: AVAudioPlayer?
     private var shouldJoinOnAudioActivation = false
+    private var currentCallWasReportedToCallKit = false
     private let defaultMutedState = false
     private let defaultSpeakerEnabledState = false
 
@@ -94,8 +95,13 @@ public final class CallManager: NSObject {
         pendingEndStatus = nil
         guard let uuid = currentSession?.callUUID else { return }
         #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        let action = CXAnswerCallAction(call: uuid)
-        CXCallController().request(CXTransaction(action: action)) { _ in }
+        if currentCallWasReportedToCallKit {
+            let action = CXAnswerCallAction(call: uuid)
+            CXCallController().request(CXTransaction(action: action)) { _ in }
+        } else {
+            _ = uuid
+            handleAnsweredCall(fromCallKit: false)
+        }
         #else
         _ = uuid
         handleAnsweredCall(fromCallKit: false)
@@ -113,12 +119,17 @@ public final class CallManager: NSObject {
             return
         }
         #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        let action = CXEndCallAction(call: uuid)
-        CXCallController().request(CXTransaction(action: action)) { [weak self] error in
-            guard let self, error != nil else { return }
-            DispatchQueue.main.async {
-                self.finalizeCall(status: status, emitStatus: true)
+        if currentCallWasReportedToCallKit {
+            let action = CXEndCallAction(call: uuid)
+            CXCallController().request(CXTransaction(action: action)) { [weak self] error in
+                guard let self, error != nil else { return }
+                DispatchQueue.main.async {
+                    self.finalizeCall(status: status, emitStatus: true)
+                }
             }
+        } else {
+            _ = uuid
+            finalizeCall(status: status, emitStatus: true)
         }
         #else
         _ = uuid
@@ -146,17 +157,25 @@ public final class CallManager: NSObject {
         let incomingThreadId = threadId(from: payload)
         let incomingPayload = CallPayload(userInfo: payload)
 
-        if let directStatus = directTerminationStatus(from: payload) {
+        if let directStatus = directStatus(from: payload) {
             if incomingThreadId == currentSession?.payload.threadId {
-                handleRemoteTermination(status: directStatus)
+                if directStatus == .accepted {
+                    handleRemoteAcceptance()
+                } else {
+                    handleRemoteTermination(status: directStatus)
+                }
             }
-            reportTransientIncomingCallIfNeeded(payload: incomingPayload, endStatus: directStatus, completion: completion)
+            if directStatus == .accepted {
+                completion()
+            } else {
+                reportTransientIncomingCallIfNeeded(payload: incomingPayload, endStatus: directStatus, completion: completion)
+            }
             return
         }
 
         if let session = currentSession, session.state != .idle {
             if let incomingPayload, incomingPayload.threadId == session.payload.threadId {
-                reportTransientIncomingCallIfNeeded(payload: incomingPayload, completion: completion)
+                completion()
                 return
             }
 
@@ -182,6 +201,7 @@ public final class CallManager: NSObject {
     private func beginOutgoingCall(with payload: CallPayload) {
         pendingDismissWorkItem?.cancel()
         stopListeningForCallStatus()
+        currentCallWasReportedToCallKit = false
         currentSession = CallSession(payload: payload, state: .connecting)
         fetchThreadDetailsIfNeeded(threadId: payload.threadId)
         transport?.connectIfNeeded()
@@ -212,6 +232,15 @@ public final class CallManager: NSObject {
             return
         }
 
+        if shouldPresentIncomingCallInCustomUI {
+            currentCallWasReportedToCallKit = false
+            startUnansweredTimer()
+            transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
+            presentIncomingCall()
+            completion()
+            return
+        }
+
         #if canImport(CallKit) && !targetEnvironment(macCatalyst)
         let update = CXCallUpdate()
         update.localizedCallerName = session.payload.callerName
@@ -224,6 +253,7 @@ public final class CallManager: NSObject {
             }
             DispatchQueue.main.async {
                 if error == nil {
+                    self.currentCallWasReportedToCallKit = true
                     self.startUnansweredTimer()
                     self.transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
                     if self.host?.isAppInForeground == true {
@@ -234,6 +264,7 @@ public final class CallManager: NSObject {
             }
         }
         #else
+        currentCallWasReportedToCallKit = false
         startUnansweredTimer()
         transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
         if host?.isAppInForeground == true {
@@ -362,6 +393,7 @@ public final class CallManager: NSObject {
         session.state = .connecting
         currentSession = session
         presentActiveCall(fromCallKit: fromCallKit)
+        transport?.emit(status: .accepted, threadId: session.payload.threadId, completion: nil)
         if !fromCallKit {
             audioEngine.joinChannel()
         }
@@ -373,6 +405,8 @@ public final class CallManager: NSObject {
         switch event.status {
         case .visible:
             updateActiveCallStatus(text: configuration.ringingText)
+        case .accepted:
+            handleRemoteAcceptance()
         case .busy:
             handleRemoteTermination(status: .busy)
         case .declined:
@@ -384,6 +418,19 @@ public final class CallManager: NSObject {
         case .none:
             break
         }
+    }
+
+    private func handleRemoteAcceptance() {
+        guard var session = currentSession, session.payload.role == .caller else { return }
+        if session.state == .active {
+            return
+        }
+
+        cancelUnansweredTimer()
+        stopRingtone()
+        session.state = .connecting
+        currentSession = session
+        updateActiveCallStatus(text: configuration.connectingText)
     }
 
     private func handleRemoteTermination(status: CallStatus) {
@@ -410,7 +457,7 @@ public final class CallManager: NSObject {
         updateActiveCallStatus(text: message(for: status))
         stopRingtone()
         #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        if let callUUID {
+        if currentCallWasReportedToCallKit, let callUUID {
             provider.reportCall(with: callUUID, endedAt: Date(), reason: callEndedReason(for: status))
         }
         #endif
@@ -479,6 +526,8 @@ public final class CallManager: NSObject {
         activeCallController = nil
         incomingCallController = nil
         pendingEndStatus = nil
+        currentCallWasReportedToCallKit = false
+        shouldJoinOnAudioActivation = false
     }
 
     private func dismissPresentedCallUI(animated: Bool) {
@@ -580,6 +629,8 @@ public final class CallManager: NSObject {
 
     private func message(for status: CallStatus) -> String {
         switch status {
+        case .accepted:
+            return configuration.connectingText
         case .busy:
             return configuration.busyText
         case .declined, .ended:
@@ -593,10 +644,12 @@ public final class CallManager: NSObject {
         }
     }
 
-    private func directTerminationStatus(from payload: [AnyHashable: Any]) -> CallStatus? {
+    private func directStatus(from payload: [AnyHashable: Any]) -> CallStatus? {
         let rawStatus = (payload["status"] as? String) ?? (payload["type"] as? String)
         guard let rawStatus else { return nil }
         switch rawStatus {
+        case CallStatus.accepted.rawValue:
+            return .accepted
         case CallStatus.ended.rawValue:
             return .ended
         case CallStatus.declined.rawValue:
@@ -608,6 +661,10 @@ public final class CallManager: NSObject {
         default:
             return nil
         }
+    }
+
+    private var shouldPresentIncomingCallInCustomUI: Bool {
+        host?.isAppInForeground == true
     }
 
     private func threadId(from payload: [AnyHashable: Any]) -> String? {
@@ -642,7 +699,7 @@ public final class CallManager: NSObject {
         switch status {
         case .busy, .declined, .ended, .notAnswered:
             return true
-        case .none, .visible:
+        case .accepted, .none, .visible:
             return false
         }
     }
@@ -760,6 +817,8 @@ extension CallManager: CXProviderDelegate {
 
     private func callEndedReason(for status: CallStatus) -> CXCallEndedReason {
         switch status {
+        case .accepted:
+            return .answeredElsewhere
         case .busy, .declined:
             return .remoteEnded
         case .ended:
