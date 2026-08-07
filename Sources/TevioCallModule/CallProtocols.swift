@@ -58,6 +58,7 @@ public struct CallUIConfiguration {
     public let ringingText: String
     public let incomingText: String
     public let connectingText: String
+    public let callFailedText: String
     public let callEndedText: String
     public let notAnsweredText: String
     public let busyText: String
@@ -68,6 +69,7 @@ public struct CallUIConfiguration {
         ringingText: String = "Ringing...",
         incomingText: String = "Incoming Call...",
         connectingText: String = "Connecting...",
+        callFailedText: String = "Call failed",
         callEndedText: String = "Call ended",
         notAnsweredText: String = "Call not answered",
         busyText: String = "Busy on another call",
@@ -77,6 +79,7 @@ public struct CallUIConfiguration {
         self.ringingText = ringingText
         self.incomingText = incomingText
         self.connectingText = connectingText
+        self.callFailedText = callFailedText
         self.callEndedText = callEndedText
         self.notAnsweredText = notAnsweredText
         self.busyText = busyText

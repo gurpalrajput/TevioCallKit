@@ -77,9 +77,9 @@ public final class ActiveCallViewModel: ObservableObject {
         imageURL = session.details?.imageURL
     }
 
-    func updateStatus(_ text: String) {
+    func updateStatus(_ text: String, isConnecting: Bool? = nil) {
         status = text
-        isConnecting = !text.contains(":")
+        self.isConnecting = isConnecting ?? !text.contains(":")
     }
 
     func updateDuration(seconds: Int) {

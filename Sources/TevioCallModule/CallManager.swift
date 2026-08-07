@@ -83,8 +83,8 @@ public final class CallManager: NSObject {
                 switch result {
                 case .success(let payload):
                     self.beginOutgoingCall(with: payload)
-                case .failure:
-                    self.finishCallUI()
+                case .failure(let error):
+                    self.presentOutgoingCallError(message: self.outgoingCallErrorMessage(from: error))
                 }
             }
         }
@@ -426,6 +426,42 @@ public final class CallManager: NSObject {
         resetCallPresentationState(animated: true)
     }
 
+    private func presentOutgoingCallError(message: String) {
+        pendingDismissWorkItem?.cancel()
+        cancelUnansweredTimer()
+        stopElapsedTimer()
+        stopListeningForCallStatus()
+        stopRingtone()
+        audioEngine.leaveChannel()
+        currentSession = nil
+
+        let model = activeViewModel ?? ActiveCallViewModel()
+        applyDefaultAudioState(to: model)
+        model.name = configuration.appName
+        model.role = ""
+        model.callDetail = message
+        model.remoteMuteText = ""
+        model.imageURL = nil
+        model.onToggleMute = nil
+        model.onToggleSpeaker = nil
+        model.onEnd = { [weak self] in
+            self?.resetCallPresentationState(animated: true)
+        }
+        model.updateStatus(configuration.callFailedText, isConnecting: false)
+        activeViewModel = model
+
+        let controller = UIHostingController(rootView: ActiveCallView(model: model))
+        controller.modalPresentationStyle = .fullScreen
+        activeCallController = controller
+        host?.presentActiveCall(controller)
+
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.resetCallPresentationState(animated: true)
+        }
+        pendingDismissWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + terminalStatusDisplayDuration, execute: workItem)
+    }
+
     private func finishCallUI() {
         pendingDismissWorkItem?.cancel()
         cancelUnansweredTimer()
@@ -609,6 +645,78 @@ public final class CallManager: NSObject {
         case .none, .visible:
             return false
         }
+    }
+
+    private func outgoingCallErrorMessage(from error: Error) -> String {
+        if let message = callErrorMessage(from: error) {
+            return message
+        }
+
+        let nsError = error as NSError
+        let fallbackDescription = nsError.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !fallbackDescription.isEmpty {
+            return fallbackDescription
+        }
+
+        return configuration.callFailedText
+    }
+
+    private func callErrorMessage(from error: Error) -> String? {
+        if let localizedError = error as? LocalizedError {
+            if let description = localizedError.errorDescription?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !description.isEmpty {
+                return description
+            }
+
+            if let failureReason = localizedError.failureReason?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !failureReason.isEmpty {
+                return failureReason
+            }
+        }
+
+        let nsError = error as NSError
+        if let extractedMessage = extractMessage(from: nsError.userInfo) {
+            return extractedMessage
+        }
+
+        if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? Error {
+            return callErrorMessage(from: underlyingError)
+        }
+
+        return nil
+    }
+
+    private func extractMessage(from value: Any) -> String? {
+        switch value {
+        case let string as String:
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        case let dictionary as [String: Any]:
+            let preferredKeys = ["message", "error", "detail", "reason", "localizedDescription"]
+            for key in preferredKeys {
+                if let value = dictionary[key], let message = extractMessage(from: value) {
+                    return message
+                }
+            }
+
+            for value in dictionary.values {
+                if let message = extractMessage(from: value) {
+                    return message
+                }
+            }
+        case let array as [Any]:
+            for item in array {
+                if let message = extractMessage(from: item) {
+                    return message
+                }
+            }
+        case let error as Error:
+            return callErrorMessage(from: error)
+        default:
+            return nil
+        }
+
+        return nil
     }
 }
 
