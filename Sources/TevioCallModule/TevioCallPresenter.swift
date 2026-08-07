@@ -17,7 +17,7 @@ final class TevioCallPresenter {
     }
 
     var isAppInForeground: Bool {
-        host?.isAppInForeground ?? hasForegroundScene
+        (host?.isAppInForeground ?? false) || hasForegroundScene
     }
 
     func prepareForIncomingCall() {
