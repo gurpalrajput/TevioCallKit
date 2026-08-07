@@ -4,9 +4,17 @@ import UIKit
 
 public protocol CallTransporting: AnyObject {
     func connectIfNeeded()
+    func ensureConnected(timeout: TimeInterval, completion: @escaping (Bool) -> Void)
     func emit(status: CallStatus, threadId: String, completion: (() -> Void)?)
     func startListening(threadId: String, handler: @escaping (RemoteCallStatusEvent) -> Void)
     func stopListening(threadId: String?)
+}
+
+public extension CallTransporting {
+    func ensureConnected(timeout: TimeInterval, completion: @escaping (Bool) -> Void) {
+        connectIfNeeded()
+        completion(true)
+    }
 }
 
 public protocol CallBackendProviding: AnyObject {
@@ -34,6 +42,27 @@ public protocol CallAudioEngining: AnyObject {
     func setMuted(_ isMuted: Bool)
     func setSpeakerEnabled(_ isEnabled: Bool)
     func didActivateAudioSession(_ audioSession: AVAudioSession)
+    func didDeactivateAudioSession(_ audioSession: AVAudioSession)
+}
+
+protocol CallSessionStoring {
+    func saveCurrentSession(_ session: CallSession)
+    func loadCurrentSession() -> CallSession?
+    func clearCurrentSession()
+    func enqueuePendingEvent(_ event: PendingCallEvent)
+    func loadPendingEvents() -> [PendingCallEvent]
+    func removePendingEvent(id: UUID)
+}
+
+protocol CallLogging {
+    func log(_ category: String, message: String, context: [String: String])
+}
+
+protocol CallKitControlling: AnyObject {
+    func requestAnswer(callUUID: UUID, completion: @escaping (Bool) -> Void)
+    func requestEnd(callUUID: UUID, completion: @escaping (Bool) -> Void)
+    func reportIncomingCall(session: CallSession, completion: @escaping (Bool) -> Void)
+    func reportCallEnded(callUUID: UUID, status: CallStatus)
 }
 
 public final class NoopCallAudioEngine: CallAudioEngining {
@@ -51,6 +80,7 @@ public final class NoopCallAudioEngine: CallAudioEngining {
     public func setMuted(_ isMuted: Bool) {}
     public func setSpeakerEnabled(_ isEnabled: Bool) {}
     public func didActivateAudioSession(_ audioSession: AVAudioSession) {}
+    public func didDeactivateAudioSession(_ audioSession: AVAudioSession) {}
 }
 
 public struct CallUIConfiguration {

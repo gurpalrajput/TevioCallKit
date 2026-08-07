@@ -6,17 +6,15 @@ import Foundation
 #if canImport(PushKit) && !targetEnvironment(macCatalyst)
 import PushKit
 #endif
-import SwiftUI
-import UIKit
 
 @MainActor
 public final class CallManager: NSObject {
-    public private(set) var currentSession: CallSession?
+    public var currentSession: CallSession? {
+        coordinator.currentSession
+    }
 
-    private weak var transport: CallTransporting?
-    private weak var backend: CallBackendProviding?
     private weak var host: CallHostCoordinating?
-    private let audioEngine: CallAudioEngining
+    private let coordinator: TevioCallCoordinator
     private let configuration: CallUIConfiguration
 
 #if canImport(CallKit) && !targetEnvironment(macCatalyst)
@@ -31,23 +29,6 @@ public final class CallManager: NSObject {
 #if canImport(PushKit) && !targetEnvironment(macCatalyst)
     private var registry: PKPushRegistry?
 #endif
-    private var unansweredTimer: DispatchWorkItem?
-    private var elapsedTimer: Timer?
-    private var pendingDismissWorkItem: DispatchWorkItem?
-    private var lastPushHandledAt: TimeInterval = 0
-    private let pushDebounceInterval: TimeInterval = 1
-    private let terminalStatusDisplayDuration: TimeInterval = 2.5
-    private let busyRetryInterval: TimeInterval = 0.6
-    private let busyRetryCount = 3
-    private var pendingEndStatus: CallStatus?
-    private var incomingViewModel: IncomingCallViewModel?
-    private var activeViewModel: ActiveCallViewModel?
-    private weak var incomingCallController: UIViewController?
-    private weak var activeCallController: UIViewController?
-    private var audioPlayer: AVAudioPlayer?
-    private var shouldJoinOnAudioActivation = false
-    private let defaultMutedState = false
-    private let defaultSpeakerEnabledState = false
 
     public init(
         transport: CallTransporting,
@@ -56,526 +37,62 @@ public final class CallManager: NSObject {
         audioEngine: CallAudioEngining = NoopCallAudioEngine(),
         configuration: CallUIConfiguration
     ) {
-        self.transport = transport
-        self.backend = backend
         self.host = host
-        self.audioEngine = audioEngine
         self.configuration = configuration
+        let logger = DefaultCallLogger()
+        let sessionStore = UserDefaultsCallSessionStore()
+        self.coordinator = TevioCallCoordinator(
+            transport: transport,
+            backend: backend,
+            host: host,
+            audioEngine: audioEngine,
+            configuration: configuration,
+            sessionStore: sessionStore,
+            logger: logger
+        )
         super.init()
-        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
+        coordinator.setCallKitController(self)
+#if canImport(CallKit) && !targetEnvironment(macCatalyst)
         provider.setDelegate(self, queue: nil)
-        #endif
-        bindAudioCallbacks()
+#endif
     }
 
     public func start() {
-        #if canImport(PushKit) && !targetEnvironment(macCatalyst)
+        coordinator.start()
+#if canImport(PushKit) && !targetEnvironment(macCatalyst)
         let registry = PKPushRegistry(queue: .main)
         registry.delegate = self
         registry.desiredPushTypes = [.voIP]
         self.registry = registry
-        #endif
+#endif
     }
 
     public func startOutgoingCall(request: OutgoingCallRequest) {
-        guard let backend else { return }
-        backend.initiateOutgoingCall(threadId: request.threadId) { [weak self] result in
-            guard let self else { return }
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let payload):
-                    self.beginOutgoingCall(with: payload)
-                case .failure:
-                    self.finishCallUI()
-                }
-            }
-        }
+        coordinator.startOutgoingCall(request: request)
     }
 
     public func answerCurrentCall() {
-        pendingEndStatus = nil
-        guard let uuid = currentSession?.callUUID else { return }
-        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        let action = CXAnswerCallAction(call: uuid)
-        CXCallController().request(CXTransaction(action: action)) { _ in }
-        #else
-        _ = uuid
-        handleAnsweredCall(fromCallKit: false)
-        #endif
+        coordinator.answerCall(source: .incomingScreen)
     }
 
     public func declineCurrentCall() {
-        endCurrentCall(status: .declined)
+        coordinator.declineCall(source: .incomingScreen)
     }
 
     public func endCurrentCall(status: CallStatus = .ended) {
-        pendingEndStatus = status
-        guard let uuid = currentSession?.callUUID else {
-            finalizeCall(status: status, emitStatus: true)
-            return
-        }
-        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        let action = CXEndCallAction(call: uuid)
-        CXCallController().request(CXTransaction(action: action)) { [weak self] error in
-            guard let self, error != nil else { return }
-            DispatchQueue.main.async {
-                self.finalizeCall(status: status, emitStatus: true)
-            }
-        }
-        #else
-        _ = uuid
-        finalizeCall(status: status, emitStatus: true)
-        #endif
-    }
-
-    func setMuted(_ isMuted: Bool) {
-        audioEngine.setMuted(isMuted)
-    }
-
-    func setSpeakerEnabled(_ isEnabled: Bool) {
-        audioEngine.setSpeakerEnabled(isEnabled)
-        
-    }
-
-    private func applyDefaultAudioState(to model: ActiveCallViewModel? = nil) {
-        model?.isMuted = defaultMutedState
-        model?.speakerEnabled = defaultSpeakerEnabledState
-        setMuted(defaultMutedState)
-        setSpeakerEnabled(defaultSpeakerEnabledState)
+        coordinator.endCall(source: .activeCallScreen, status: status)
     }
 
     public func handleIncomingPush(payload: [AnyHashable: Any], completion: @escaping () -> Void) {
-        let now = Date().timeIntervalSince1970
-        guard now - lastPushHandledAt >= pushDebounceInterval else {
-            completion()
-            return
-        }
-        lastPushHandledAt = now
-
-        let incomingThreadId = threadId(from: payload)
-
-        if let directStatus = directTerminationStatus(from: payload) {
-            if incomingThreadId == currentSession?.payload.threadId {
-                handleRemoteTermination(status: directStatus)
-            }
-            completion()
-            return
-        }
-
-        if let session = currentSession, session.state != .idle {
-            if let incomingThreadId, incomingThreadId != session.payload.threadId {
-                emitBusyStatus(for: incomingThreadId, whileActiveThreadIdIs: session.payload.threadId, completion: completion)
-            } else {
-                completion()
-            }
-            return
-        }
-
-        guard let payload = CallPayload(userInfo: payload) else {
-            completion()
-            return
-        }
-
-        host?.prepareForIncomingCall()
-        createIncomingSession(with: payload)
-        reportIncomingCall(completion: completion)
+        coordinator.handleIncomingPush(payload: payload, completion: completion)
     }
 
-    private func beginOutgoingCall(with payload: CallPayload) {
-        pendingDismissWorkItem?.cancel()
-        stopListeningForCallStatus()
-        currentSession = CallSession(payload: payload, state: .connecting)
-        fetchThreadDetailsIfNeeded(threadId: payload.threadId)
-        transport?.connectIfNeeded()
-        transport?.startListening(threadId: payload.threadId) { [weak self] event in
-            self?.handleRemoteStatus(event)
-        }
-        audioEngine.configure(with: payload)
-        audioEngine.joinChannel()
-        presentActiveCall(fromCallKit: false)
-        updateActiveCallStatus(text: payload.role == .caller ? configuration.ringingText : configuration.connectingText)
+    public func applicationDidBecomeActive() {
+        coordinator.handleApplicationDidBecomeActive()
     }
 
-    private func createIncomingSession(with payload: CallPayload) {
-        pendingDismissWorkItem?.cancel()
-        stopElapsedTimer()
-        stopListeningForCallStatus()
-        currentSession = CallSession(payload: payload, state: .ringing)
-        fetchThreadDetailsIfNeeded(threadId: payload.threadId)
-        transport?.connectIfNeeded()
-        transport?.startListening(threadId: payload.threadId) { [weak self] event in
-            self?.handleRemoteStatus(event)
-        }
-    }
-
-    private func reportIncomingCall(completion: @escaping () -> Void) {
-        guard let session = currentSession else {
-            completion()
-            return
-        }
-
-        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        let update = CXCallUpdate()
-        update.localizedCallerName = session.payload.callerName
-        update.hasVideo = false
-
-        provider.reportNewIncomingCall(with: session.callUUID, update: update) { [weak self] error in
-            guard let self else {
-                completion()
-                return
-            }
-            DispatchQueue.main.async {
-                if error == nil {
-                    self.startUnansweredTimer()
-                    self.transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
-                    if self.host?.isAppInForeground == true {
-                        self.presentIncomingCall()
-                    }
-                }
-                completion()
-            }
-        }
-        #else
-        startUnansweredTimer()
-        transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
-        if host?.isAppInForeground == true {
-            presentIncomingCall()
-        }
-        completion()
-        #endif
-    }
-
-    private func presentIncomingCall() {
-        guard let session = currentSession else { return }
-        let model = incomingViewModel ?? IncomingCallViewModel()
-        model.onAccept = { [weak self] in
-            self?.stopRingtone()
-            self?.answerCurrentCall()
-        }
-        model.onDecline = { [weak self] in
-            self?.stopRingtone()
-            self?.declineCurrentCall()
-        }
-        model.update(session: session, configuration: configuration)
-        incomingViewModel = model
-        let controller = UIHostingController(rootView: IncomingCallView(model: model))
-        controller.modalPresentationStyle = .fullScreen
-        incomingCallController = controller
-        host?.presentIncomingCall(controller)
-        playRingtoneIfNeeded()
-    }
-
-    private func presentActiveCall(fromCallKit: Bool) {
-        guard let session = currentSession else { return }
-        let model = activeViewModel ?? ActiveCallViewModel()
-        applyDefaultAudioState(to: model)
-        model.onToggleMute = { [weak self, weak model] in
-            guard let self, let model else { return }
-            model.isMuted.toggle()
-            self.setMuted(model.isMuted)
-        }
-        model.onToggleSpeaker = { [weak self, weak model] in
-            guard let self, let model else { return }
-            model.speakerEnabled.toggle()
-            self.setSpeakerEnabled(model.speakerEnabled)
-        }
-        model.onEnd = { [weak self] in
-            self?.endCurrentCall()
-        }
-        model.update(session: session)
-        activeViewModel = model
-        let controller = UIHostingController(rootView: ActiveCallView(model: model))
-        controller.modalPresentationStyle = .fullScreen
-        activeCallController = controller
-        shouldJoinOnAudioActivation = fromCallKit
-
-        if let incomingController = incomingCallController,
-           let presenter = incomingController.presentingViewController {
-            incomingController.dismiss(animated: false) { [weak self] in
-                guard let self else { return }
-                self.incomingCallController = nil
-                presenter.present(controller, animated: true)
-            }
-            return
-        }
-
-        host?.presentActiveCall(controller)
-    }
-
-    private func fetchThreadDetailsIfNeeded(threadId: String) {
-        guard let backend else { return }
-        backend.fetchThreadDetails(threadId: threadId) { [weak self] result in
-            guard let self else { return }
-            DispatchQueue.main.async {
-                guard var session = self.currentSession, session.payload.threadId == threadId else { return }
-                if case .success(let details) = result {
-                    session.details = details
-                    self.currentSession = session
-                    self.incomingViewModel?.update(session: session, configuration: self.configuration)
-                    self.activeViewModel?.update(session: session)
-                }
-            }
-        }
-    }
-
-    private func handleAnsweredCall(fromCallKit: Bool) {
-        guard var session = currentSession else { return }
-        cancelUnansweredTimer()
-        pendingEndStatus = nil
-        stopRingtone()
-        host?.prepareForAnsweredCall()
-        transport?.connectIfNeeded()
-        audioEngine.configure(with: session.payload)
-        session.state = .connecting
-        currentSession = session
-        presentActiveCall(fromCallKit: fromCallKit)
-        if !fromCallKit {
-            audioEngine.joinChannel()
-        }
-        updateActiveCallStatus(text: configuration.connectingText)
-    }
-
-    private func handleRemoteStatus(_ event: RemoteCallStatusEvent) {
-        guard event.threadId == currentSession?.payload.threadId else { return }
-        switch event.status {
-        case .visible:
-            updateActiveCallStatus(text: configuration.ringingText)
-        case .busy:
-            handleRemoteTermination(status: .busy)
-        case .declined:
-            handleRemoteTermination(status: .declined)
-        case .ended:
-            handleRemoteTermination(status: .ended)
-        case .notAnswered:
-            handleRemoteTermination(status: .notAnswered)
-        case .none:
-            break
-        }
-    }
-
-    private func handleRemoteTermination(status: CallStatus) {
-        pendingEndStatus = nil
-        guard currentSession != nil else { return }
-        finalizeCall(status: status, emitStatus: false, dismissAfter: terminalStatusDisplayDuration)
-    }
-
-    private func finalizeCall(status: CallStatus, emitStatus: Bool, dismissAfter: TimeInterval = 0) {
-        let callUUID = currentSession?.callUUID
-        pendingDismissWorkItem?.cancel()
-        cancelUnansweredTimer()
-        stopElapsedTimer()
-        audioEngine.leaveChannel()
-
-        if emitStatus, let threadId = currentSession?.payload.threadId {
-            transport?.emit(status: status, threadId: threadId, completion: nil)
-            if shouldClearRemoteStatus(after: status) {
-                transport?.emit(status: .none, threadId: threadId, completion: nil)
-            }
-        }
-
-        stopListeningForCallStatus()
-        updateActiveCallStatus(text: message(for: status))
-        stopRingtone()
-        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        if let callUUID {
-            provider.reportCall(with: callUUID, endedAt: Date(), reason: callEndedReason(for: status))
-        }
-        #endif
-        if dismissAfter > 0 {
-            let workItem = DispatchWorkItem { [weak self] in
-                self?.resetCallPresentationState(animated: true)
-            }
-            pendingDismissWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + dismissAfter, execute: workItem)
-            return
-        }
-
-        resetCallPresentationState(animated: true)
-    }
-
-    private func finishCallUI() {
-        pendingDismissWorkItem?.cancel()
-        cancelUnansweredTimer()
-        stopElapsedTimer()
-        dismissPresentedCallUI(animated: true)
-    }
-
-    private func resetCallPresentationState(animated: Bool) {
-        pendingDismissWorkItem?.cancel()
-        pendingDismissWorkItem = nil
-        dismissPresentedCallUI(animated: animated)
-        currentSession = nil
-        activeViewModel = nil
-        incomingViewModel = nil
-        activeCallController = nil
-        incomingCallController = nil
-        pendingEndStatus = nil
-    }
-
-    private func dismissPresentedCallUI(animated: Bool) {
-        if let incomingController = incomingCallController,
-           incomingController.presentingViewController != nil {
-            incomingController.dismiss(animated: animated)
-            return
-        }
-
-        if let activeController = activeCallController,
-           activeController.presentingViewController != nil {
-            activeController.dismiss(animated: animated)
-            return
-        }
-
-        host?.dismissCallUI(animated: animated)
-    }
-
-    private func startUnansweredTimer() {
-        cancelUnansweredTimer()
-        let workItem = DispatchWorkItem { [weak self] in
-            guard let self, let session = self.currentSession else { return }
-            guard session.state == .ringing else { return }
-            self.pendingEndStatus = .notAnswered
-            self.endCurrentCall(status: .notAnswered)
-        }
-        unansweredTimer = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: workItem)
-    }
-
-    private func cancelUnansweredTimer() {
-        unansweredTimer?.cancel()
-        unansweredTimer = nil
-    }
-
-    private func startElapsedTimer() {
-        stopElapsedTimer()
-        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self, var session = self.currentSession else { return }
-            session.elapsedSeconds += 1
-            self.currentSession = session
-            self.activeViewModel?.updateDuration(seconds: session.elapsedSeconds)
-        }
-    }
-
-    private func stopElapsedTimer() {
-        elapsedTimer?.invalidate()
-        elapsedTimer = nil
-    }
-
-    private func stopListeningForCallStatus() {
-        transport?.stopListening(threadId: currentSession?.payload.threadId)
-    }
-
-    private func bindAudioCallbacks() {
-        audioEngine.onRemoteUserJoined = { [weak self] in
-            guard let self, var session = self.currentSession else { return }
-            DispatchQueue.main.async {
-                session.state = .active
-                session.startedAt = Date()
-                self.currentSession = session
-                self.startElapsedTimer()
-                self.updateActiveCallStatus(text: "00:00")
-            }
-        }
-
-        audioEngine.onRemoteUserLeft = { [weak self] in
-            DispatchQueue.main.async {
-                self?.handleRemoteTermination(status: .ended)
-            }
-        }
-
-        audioEngine.onRemoteMuteChanged = { [weak self] isMuted in
-            DispatchQueue.main.async {
-                self?.activeViewModel?.updateRemoteMuted(isMuted)
-            }
-        }
-    }
-
-    private func updateActiveCallStatus(text: String) {
-        activeViewModel?.updateStatus(text)
-    }
-
-    private func playRingtoneIfNeeded() {
-        guard let url = configuration.ringtoneURL else { return }
-        do {
-            audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.numberOfLoops = -1
-            audioPlayer?.play()
-        } catch {
-            audioPlayer = nil
-        }
-    }
-
-    private func stopRingtone() {
-        audioPlayer?.stop()
-        audioPlayer = nil
-    }
-
-    private func message(for status: CallStatus) -> String {
-        switch status {
-        case .busy:
-            return configuration.busyText
-        case .declined, .ended:
-            return configuration.callEndedText
-        case .notAnswered:
-            return configuration.notAnsweredText
-        case .visible:
-            return configuration.incomingText
-        case .none:
-            return configuration.callEndedText
-        }
-    }
-
-    private func directTerminationStatus(from payload: [AnyHashable: Any]) -> CallStatus? {
-        let rawStatus = (payload["status"] as? String) ?? (payload["type"] as? String)
-        guard let rawStatus else { return nil }
-        switch rawStatus {
-        case CallStatus.ended.rawValue:
-            return .ended
-        case CallStatus.declined.rawValue:
-            return .declined
-        case CallStatus.notAnswered.rawValue:
-            return .notAnswered
-        case CallStatus.busy.rawValue:
-            return .busy
-        default:
-            return nil
-        }
-    }
-
-    private func threadId(from payload: [AnyHashable: Any]) -> String? {
-        (payload["thread_id"] as? String) ?? (payload["threadId"] as? String)
-    }
-
-    private func emitBusyStatus(
-        for threadId: String,
-        whileActiveThreadIdIs activeThreadId: String,
-        completion: @escaping () -> Void
-    ) {
-        transport?.emit(status: .busy, threadId: threadId, completion: completion)
-
-        guard busyRetryCount > 1 else { return }
-
-        for attempt in 1..<busyRetryCount {
-            let deadline = DispatchTime.now() + (busyRetryInterval * Double(attempt))
-            DispatchQueue.main.asyncAfter(deadline: deadline) { [weak self] in
-                guard
-                    let self,
-                    self.currentSession?.payload.threadId == activeThreadId
-                else {
-                    return
-                }
-
-                self.transport?.emit(status: .busy, threadId: threadId, completion: nil)
-            }
-        }
-    }
-
-    private func shouldClearRemoteStatus(after status: CallStatus) -> Bool {
-        switch status {
-        case .busy, .declined, .ended, .notAnswered:
-            return true
-        case .none, .visible:
-            return false
-        }
+    public func applicationDidEnterBackground() {
+        coordinator.handleApplicationDidEnterBackground()
     }
 }
 
@@ -595,33 +112,71 @@ extension CallManager: PKPushRegistryDelegate {
 #if canImport(CallKit) && !targetEnvironment(macCatalyst)
 extension CallManager: CXProviderDelegate {
     public func providerDidReset(_ provider: CXProvider) {
-        finalizeCall(status: .ended, emitStatus: false)
+        coordinator.handleProviderDidReset()
     }
 
     public func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
-        handleAnsweredCall(fromCallKit: true)
-        action.fulfill()
+        if coordinator.handleCallKitAnswerAction() {
+            action.fulfill()
+        } else {
+            action.fail()
+        }
     }
 
     public func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
-        let status = pendingEndStatus ?? ((currentSession?.state == .ringing) ? .declined : .ended)
-        finalizeCall(status: status, emitStatus: pendingEndStatus != nil || status == .declined)
-        action.fulfill()
+        if coordinator.handleCallKitEndAction() {
+            action.fulfill()
+        } else {
+            action.fail()
+        }
     }
 
     public func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
-        audioEngine.didActivateAudioSession(audioSession)
-        if shouldJoinOnAudioActivation {
-            shouldJoinOnAudioActivation = false
-            audioEngine.joinChannel()
+        coordinator.handleActivatedAudioSession(audioSession)
+    }
+
+    public func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {
+        coordinator.handleDeactivatedAudioSession(audioSession)
+    }
+}
+
+extension CallManager: CallKitControlling {
+    func requestAnswer(callUUID: UUID, completion: @escaping (Bool) -> Void) {
+        let action = CXAnswerCallAction(call: callUUID)
+        CXCallController().request(CXTransaction(action: action)) { error in
+            DispatchQueue.main.async {
+                completion(error == nil)
+            }
         }
+    }
+
+    func requestEnd(callUUID: UUID, completion: @escaping (Bool) -> Void) {
+        let action = CXEndCallAction(call: callUUID)
+        CXCallController().request(CXTransaction(action: action)) { error in
+            DispatchQueue.main.async {
+                completion(error == nil)
+            }
+        }
+    }
+
+    func reportIncomingCall(session: CallSession, completion: @escaping (Bool) -> Void) {
+        let update = CXCallUpdate()
+        update.localizedCallerName = session.payload.callerName
+        update.hasVideo = false
+        provider.reportNewIncomingCall(with: session.callUUID, update: update) { error in
+            DispatchQueue.main.async {
+                completion(error == nil)
+            }
+        }
+    }
+
+    func reportCallEnded(callUUID: UUID, status: CallStatus) {
+        provider.reportCall(with: callUUID, endedAt: Date(), reason: callEndedReason(for: status))
     }
 
     private func callEndedReason(for status: CallStatus) -> CXCallEndedReason {
         switch status {
-        case .busy, .declined:
-            return .remoteEnded
-        case .ended:
+        case .busy, .declined, .ended:
             return .remoteEnded
         case .notAnswered:
             return .unanswered

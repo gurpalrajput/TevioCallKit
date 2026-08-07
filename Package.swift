@@ -33,6 +33,11 @@ let package = Package(
             resources: [
                 .process("Resources")
             ]
+        ),
+        .testTarget(
+            name: "TevioCallModuleTests",
+            dependencies: ["TevioCallModule"],
+            path: "Tests/TevioCallModuleTests"
         )
     ]
 )
