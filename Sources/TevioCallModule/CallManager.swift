@@ -34,8 +34,6 @@ public final class CallManager: NSObject {
     private var unansweredTimer: DispatchWorkItem?
     private var elapsedTimer: Timer?
     private var pendingDismissWorkItem: DispatchWorkItem?
-    private var lastPushHandledAt: TimeInterval = 0
-    private let pushDebounceInterval: TimeInterval = 1
     private let terminalStatusDisplayDuration: TimeInterval = 2.5
     private let busyRetryInterval: TimeInterval = 0.6
     private let busyRetryCount = 3
@@ -145,34 +143,34 @@ public final class CallManager: NSObject {
     }
 
     public func handleIncomingPush(payload: [AnyHashable: Any], completion: @escaping () -> Void) {
-        let now = Date().timeIntervalSince1970
-        guard now - lastPushHandledAt >= pushDebounceInterval else {
-            completion()
-            return
-        }
-        lastPushHandledAt = now
-
         let incomingThreadId = threadId(from: payload)
+        let incomingPayload = CallPayload(userInfo: payload)
 
         if let directStatus = directTerminationStatus(from: payload) {
             if incomingThreadId == currentSession?.payload.threadId {
                 handleRemoteTermination(status: directStatus)
             }
-            completion()
+            reportTransientIncomingCallIfNeeded(payload: incomingPayload, endStatus: directStatus, completion: completion)
             return
         }
 
         if let session = currentSession, session.state != .idle {
+            if let incomingPayload, incomingPayload.threadId == session.payload.threadId {
+                reportTransientIncomingCallIfNeeded(payload: incomingPayload, completion: completion)
+                return
+            }
+
             if let incomingThreadId, incomingThreadId != session.payload.threadId {
-                emitBusyStatus(for: incomingThreadId, whileActiveThreadIdIs: session.payload.threadId, completion: completion)
+                emitBusyStatus(for: incomingThreadId, whileActiveThreadIdIs: session.payload.threadId, completion: {})
+                reportTransientIncomingCallIfNeeded(payload: incomingPayload, endStatus: .busy, completion: completion)
             } else {
-                completion()
+                reportTransientIncomingCallIfNeeded(payload: incomingPayload, markFailed: true, completion: completion)
             }
             return
         }
 
-        guard let payload = CallPayload(userInfo: payload) else {
-            completion()
+        guard let payload = incomingPayload else {
+            reportTransientIncomingCallIfNeeded(payload: nil, markFailed: true, completion: completion)
             return
         }
 
@@ -241,6 +239,41 @@ public final class CallManager: NSObject {
         if host?.isAppInForeground == true {
             presentIncomingCall()
         }
+        completion()
+        #endif
+    }
+
+    private func reportTransientIncomingCallIfNeeded(
+        payload: CallPayload?,
+        endStatus: CallStatus? = nil,
+        markFailed: Bool = false,
+        completion: @escaping () -> Void
+    ) {
+        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
+        let update = CXCallUpdate()
+        update.localizedCallerName = payload?.callerName ?? configuration.appName
+        update.hasVideo = false
+
+        let callUUID = UUID()
+        provider.reportNewIncomingCall(with: callUUID, update: update) { [weak self] _ in
+            DispatchQueue.main.async {
+                guard let self else {
+                    completion()
+                    return
+                }
+
+                if markFailed {
+                    self.provider.reportCall(with: callUUID, endedAt: Date(), reason: .failed)
+                } else if let endStatus {
+                    self.provider.reportCall(with: callUUID, endedAt: Date(), reason: self.callEndedReason(for: endStatus))
+                }
+                completion()
+            }
+        }
+        #else
+        _ = payload
+        _ = endStatus
+        _ = markFailed
         completion()
         #endif
     }
