@@ -1,0 +1,68 @@
+{
+  "": {
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/primary.swiftdeps"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/ActiveCallViewController.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/ActiveCallViewController.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/ActiveCallViewController.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/ActiveCallViewController~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/ActiveCallViewController.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/ActiveCallViewController.dia"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/AgoraCallAudioEngine.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/AgoraCallAudioEngine.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/AgoraCallAudioEngine.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/AgoraCallAudioEngine~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/AgoraCallAudioEngine.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/AgoraCallAudioEngine.dia"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallManager.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallManager.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallManager.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallManager.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallManager.dia"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallModels.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallModels.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallModels.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallModels.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallModels.dia"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallProtocols.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallProtocols.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallProtocols.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallProtocols~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallProtocols.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallProtocols.dia"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallUIComponents.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallUIComponents.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallUIComponents.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallUIComponents~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallUIComponents.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallUIComponents.dia"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/IncomingCallViewController.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/IncomingCallViewController.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/IncomingCallViewController.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/IncomingCallViewController~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/IncomingCallViewController.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/IncomingCallViewController.dia"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/SocketManager.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/SocketManager.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/SocketManager.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/SocketManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/SocketManager.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/SocketManager.dia"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/DerivedSources/resource_bundle_accessor.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/resource_bundle_accessor.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/resource_bundle_accessor.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/resource_bundle_accessor~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/resource_bundle_accessor.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/resource_bundle_accessor.dia"
+  }
+}

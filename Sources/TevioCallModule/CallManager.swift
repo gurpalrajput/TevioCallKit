@@ -46,6 +46,11 @@ public final class CallManager: NSObject {
     private var shouldJoinOnAudioActivation = false
     private let defaultMutedState = false
     private let defaultSpeakerEnabledState = false
+    /// Tracks whether the native CallKit UI was suppressed for the current
+    /// incoming call because the app was in the foreground. When `true`,
+    /// answer/end actions bypass CXCallController and go directly through
+    /// our custom call UI to avoid the iPad full-screen CallKit overlay.
+    private var didSuppressCallKitUI = false
 
     public init(
         transport: CallTransporting,
@@ -94,8 +99,18 @@ public final class CallManager: NSObject {
         pendingEndStatus = nil
         guard let uuid = currentSession?.callUUID else { return }
         #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        let action = CXAnswerCallAction(call: uuid)
-        CXCallController().request(CXTransaction(action: action)) { _ in }
+        if didSuppressCallKitUI || host?.isAppInForeground == true {
+            // Foreground: bypass the CXAnswerCallAction round-trip to avoid
+            // the iPad full-screen CallKit UI fighting with our custom UI.
+            // Report the call as answered elsewhere so CallKit dismisses.
+            provider.reportCall(with: uuid, endedAt: nil, reason: .answeredElsewhere)
+            didSuppressCallKitUI = true
+            handleAnsweredCall(fromCallKit: false)
+        } else {
+            // Background / lock-screen: use normal CallKit answer flow
+            let action = CXAnswerCallAction(call: uuid)
+            CXCallController().request(CXTransaction(action: action)) { _ in }
+        }
         #else
         _ = uuid
         handleAnsweredCall(fromCallKit: false)
@@ -113,11 +128,16 @@ public final class CallManager: NSObject {
             return
         }
         #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        let action = CXEndCallAction(call: uuid)
-        CXCallController().request(CXTransaction(action: action)) { [weak self] error in
-            guard let self, error != nil else { return }
-            DispatchQueue.main.async {
-                self.finalizeCall(status: status, emitStatus: true)
+        if didSuppressCallKitUI {
+            // Foreground path: CallKit was already dismissed, finalize directly.
+            finalizeCall(status: status, emitStatus: true)
+        } else {
+            let action = CXEndCallAction(call: uuid)
+            CXCallController().request(CXTransaction(action: action)) { [weak self] error in
+                guard let self, error != nil else { return }
+                DispatchQueue.main.async {
+                    self.finalizeCall(status: status, emitStatus: true)
+                }
             }
         }
         #else
@@ -226,7 +246,17 @@ public final class CallManager: NSObject {
                 if error == nil {
                     self.startUnansweredTimer()
                     self.transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
-                    if self.host?.isAppInForeground == true {
+                    let isForeground = self.host?.isAppInForeground == true
+                    if isForeground {
+                        // Immediately suppress the native CallKit UI so it
+                        // doesn't flash over our custom incoming call screen.
+                        // On iPad this prevents the full-screen CallKit overlay.
+                        self.provider.reportCall(
+                            with: session.callUUID,
+                            endedAt: nil,
+                            reason: .answeredElsewhere
+                        )
+                        self.didSuppressCallKitUI = true
                         self.presentIncomingCall()
                     }
                 }
@@ -443,6 +473,7 @@ public final class CallManager: NSObject {
         activeCallController = nil
         incomingCallController = nil
         pendingEndStatus = nil
+        didSuppressCallKitUI = false
     }
 
     private func dismissPresentedCallUI(animated: Bool) {
@@ -632,13 +663,21 @@ extension CallManager: CXProviderDelegate {
     }
 
     public func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
-        handleAnsweredCall(fromCallKit: true)
+        // Only process if the call is still in ringing state.
+        // If the call was already answered via the foreground path,
+        // currentSession will be in .connecting or .active state.
+        if currentSession?.state == .ringing {
+            handleAnsweredCall(fromCallKit: true)
+        }
         action.fulfill()
     }
 
     public func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
-        let status = pendingEndStatus ?? ((currentSession?.state == .ringing) ? .declined : .ended)
-        finalizeCall(status: status, emitStatus: pendingEndStatus != nil || status == .declined)
+        // Only process if there's still an active session that hasn't been finalized.
+        if currentSession != nil, !didSuppressCallKitUI {
+            let status = pendingEndStatus ?? ((currentSession?.state == .ringing) ? .declined : .ended)
+            finalizeCall(status: status, emitStatus: pendingEndStatus != nil || status == .declined)
+        }
         action.fulfill()
     }
 

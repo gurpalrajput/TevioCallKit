@@ -1,0 +1,3 @@
+module AgoraInfra_iOS {
+    header "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/include/AgoraInfra_iOS-Swift.h"
+}

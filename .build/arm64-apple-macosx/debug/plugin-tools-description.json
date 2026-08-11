@@ -1,0 +1,1524 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+    "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream_Starscream.bundle/PrivacyInfo.xcprivacy" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/PrivacyInfo.xcprivacy"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream_Starscream.bundle/PrivacyInfo.xcprivacy"
+        }
+      ]
+    },
+    "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallKit_TevioCallModule.bundle/Media.xcassets" : {
+      "inputs" : [
+        {
+          "kind" : "directory",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/Resources/Media.xcassets"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "directory",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallKit_TevioCallModule.bundle/Media.xcassets"
+        }
+      ]
+    }
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.AgoraInfra_iOS-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/sources",
+      "importPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/AgoraRtcEngine_iOS/Sources/AgoraInfra_iOS/AgoraInfra_iOS.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "AgoraInfra_iOS",
+      "moduleOutputPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/AgoraInfra_iOS.swiftmodule",
+      "objects" : [
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/AgoraInfra_iOS.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx10.13",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/include/AgoraInfra_iOS-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-suppress-warnings"
+      ],
+      "outputFileMapPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/AgoraInfra_iOS.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/AgoraInfra_iOS.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/AgoraRtcEngine_iOS/Sources/AgoraInfra_iOS/AgoraInfra_iOS.swift"
+      ],
+      "tempsPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.SocketIO-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/sources",
+      "importPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Ack/SocketAckEmitter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Ack/SocketAckManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketAnyEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketEventHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientConfiguration.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientOption.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientSpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOStatus.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketRawView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEnginePacketType.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEnginePollable.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineSpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineWebsocket.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Manager/SocketManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Manager/SocketManagerSpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Parse/SocketPacket.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Parse/SocketParsable.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketExtensions.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketLogger.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketStringReader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketTypes.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/Starscream.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "SocketIO",
+      "moduleOutputPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/SocketIO.swiftmodule",
+      "objects" : [
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketAckEmitter.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketAckManager.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketAnyEvent.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEventHandler.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOClient.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOClientConfiguration.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOClientOption.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOClientSpec.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOStatus.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketRawView.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEngine.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEngineClient.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEnginePacketType.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEnginePollable.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEngineSpec.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEngineWebsocket.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketManager.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketManagerSpec.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketPacket.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketParsable.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketExtensions.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketLogger.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketStringReader.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketTypes.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx10.13",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/include/SocketIO-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-suppress-warnings"
+      ],
+      "outputFileMapPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketAckEmitter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketAckManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketAnyEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEventHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOClientConfiguration.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOClientOption.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOClientSpec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketIOStatus.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketRawView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEngineClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEnginePacketType.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEnginePollable.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEngineSpec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketEngineWebsocket.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketManagerSpec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketPacket.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketParsable.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketExtensions.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketLogger.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketStringReader.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/SocketTypes.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/SocketIO.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Ack/SocketAckEmitter.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Ack/SocketAckManager.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketAnyEvent.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketEventHandler.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClient.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientConfiguration.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientOption.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientSpec.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOStatus.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketRawView.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngine.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineClient.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEnginePacketType.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEnginePollable.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineSpec.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineWebsocket.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Manager/SocketManager.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Manager/SocketManagerSpec.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Parse/SocketPacket.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Parse/SocketParsable.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketExtensions.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketLogger.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketStringReader.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketTypes.swift"
+      ],
+      "tempsPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.Starscream-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/sources",
+      "importPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Compression/Compression.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Compression/WSCompression.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/DataBytes/Data+Extensions.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/Engine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/NativeEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/WSEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPServerHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FrameCollector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/Framer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/HTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/StringHTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Security/FoundationSecurity.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Security/Security.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Server/Server.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Server/WebSocketServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Starscream/WebSocket.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/FoundationTransport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/TCPTransport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/Transport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/DerivedSources/resource_bundle_accessor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<Starscream-arm64-apple-macosx-debug.module-resources>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "Starscream",
+      "moduleOutputPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/Starscream.swiftmodule",
+      "objects" : [
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Compression.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/WSCompression.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Data+Extensions.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Engine.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/NativeEngine.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/WSEngine.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FoundationHTTPHandler.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FoundationHTTPServerHandler.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FrameCollector.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Framer.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/HTTPHandler.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/StringHTTPHandler.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FoundationSecurity.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Security.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Server.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/WebSocketServer.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/WebSocket.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FoundationTransport.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/TCPTransport.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Transport.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/resource_bundle_accessor.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx10.13",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+        "-module-cache-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/include/Starscream-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-suppress-warnings"
+      ],
+      "outputFileMapPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Compression.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/WSCompression.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Data+Extensions.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Engine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/NativeEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/WSEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FoundationHTTPHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FoundationHTTPServerHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FrameCollector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Framer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/HTTPHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/StringHTTPHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FoundationSecurity.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Security.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Server.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/WebSocketServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/WebSocket.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/FoundationTransport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/TCPTransport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/Transport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/resource_bundle_accessor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/Starscream.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Compression/Compression.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Compression/WSCompression.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/DataBytes/Data+Extensions.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/Engine.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/NativeEngine.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/WSEngine.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPHandler.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPServerHandler.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FrameCollector.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/Framer.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/HTTPHandler.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/StringHTTPHandler.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Security/FoundationSecurity.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Security/Security.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Server/Server.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Server/WebSocketServer.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Starscream/WebSocket.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/FoundationTransport.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/TCPTransport.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/Transport.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/DerivedSources/resource_bundle_accessor.swift"
+      ],
+      "tempsPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.TevioCallModule-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/sources",
+      "importPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/ActiveCallViewController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/AgoraCallAudioEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallModels.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallProtocols.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallUIComponents.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/IncomingCallViewController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/SocketManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/DerivedSources/resource_bundle_accessor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<TevioCallModule-arm64-apple-macosx-debug.module-resources>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/SocketIO.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "TevioCallModule",
+      "moduleOutputPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/TevioCallModule.swiftmodule",
+      "objects" : [
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/ActiveCallViewController.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/AgoraCallAudioEngine.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallManager.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallModels.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallProtocols.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallUIComponents.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/IncomingCallViewController.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/SocketManager.swift.o",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/resource_bundle_accessor.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx10.13",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+        "-module-cache-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/include/TevioCallModule-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "teviocallkit"
+      ],
+      "outputFileMapPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/ActiveCallViewController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/AgoraCallAudioEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallModels.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallProtocols.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/CallUIComponents.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/IncomingCallViewController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/SocketManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/resource_bundle_accessor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules/TevioCallModule.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/ActiveCallViewController.swift",
+        "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/AgoraCallAudioEngine.swift",
+        "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallManager.swift",
+        "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallModels.swift",
+        "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallProtocols.swift",
+        "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallUIComponents.swift",
+        "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/IncomingCallViewController.swift",
+        "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/SocketManager.swift",
+        "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/DerivedSources/resource_bundle_accessor.swift"
+      ],
+      "tempsPath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "AgoraInfra_iOS" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "AgoraInfra_iOS",
+      "-c",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/AgoraRtcEngine_iOS/Sources/AgoraInfra_iOS/AgoraInfra_iOS.swift",
+      "-I",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx10.13",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/include/AgoraInfra_iOS-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-suppress-warnings",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "SocketIO" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "SocketIO",
+      "-c",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Ack/SocketAckEmitter.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Ack/SocketAckManager.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketAnyEvent.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketEventHandler.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClient.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientConfiguration.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientOption.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientSpec.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOStatus.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketRawView.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngine.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineClient.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEnginePacketType.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEnginePollable.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineSpec.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineWebsocket.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Manager/SocketManager.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Manager/SocketManagerSpec.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Parse/SocketPacket.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Parse/SocketParsable.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketExtensions.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketLogger.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketStringReader.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketTypes.swift",
+      "-I",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx10.13",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/include/SocketIO-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-suppress-warnings",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "Starscream" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "Starscream",
+      "-c",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Compression/Compression.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Compression/WSCompression.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/DataBytes/Data+Extensions.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/Engine.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/NativeEngine.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/WSEngine.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPHandler.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPServerHandler.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FrameCollector.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/Framer.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/HTTPHandler.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/StringHTTPHandler.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Security/FoundationSecurity.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Security/Security.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Server/Server.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Server/WebSocketServer.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Starscream/WebSocket.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/FoundationTransport.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/TCPTransport.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/Transport.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/DerivedSources/resource_bundle_accessor.swift",
+      "-I",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx10.13",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+      "-module-cache-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/include/Starscream-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-suppress-warnings",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "TevioCallModule" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "TevioCallModule",
+      "-package-name",
+      "teviocallkit",
+      "-c",
+      "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/ActiveCallViewController.swift",
+      "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/AgoraCallAudioEngine.swift",
+      "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallManager.swift",
+      "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallModels.swift",
+      "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallProtocols.swift",
+      "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallUIComponents.swift",
+      "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/IncomingCallViewController.swift",
+      "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/SocketManager.swift",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/DerivedSources/resource_bundle_accessor.swift",
+      "-I",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx10.13",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+      "-module-cache-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/include/TevioCallModule-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "teviocallkit",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "AgoraInfra_iOS" : [
+      "aosl"
+    ],
+    "SocketIO" : [
+      "Starscream"
+    ],
+    "Starscream" : [
+
+    ],
+    "TevioCallModule" : [
+      "SocketIO",
+      "Starscream"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/AgoraRtcEngine_iOS/Sources/AgoraInfra_iOS/AgoraInfra_iOS.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/sources"
+    },
+    "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Ack/SocketAckEmitter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Ack/SocketAckManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketAnyEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketEventHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientConfiguration.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientOption.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOClientSpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketIOStatus.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Client/SocketRawView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEnginePacketType.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEnginePollable.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineSpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Engine/SocketEngineWebsocket.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Manager/SocketManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Manager/SocketManagerSpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Parse/SocketPacket.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Parse/SocketParsable.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketExtensions.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketLogger.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketStringReader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/socket.io-client-swift/Source/SocketIO/Util/SocketTypes.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/SocketIO.build/sources"
+    },
+    "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Compression/Compression.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Compression/WSCompression.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/DataBytes/Data+Extensions.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/Engine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/NativeEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Engine/WSEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPServerHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/FrameCollector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/Framer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/HTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Framer/StringHTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Security/FoundationSecurity.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Security/Security.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Server/Server.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Server/WebSocketServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Starscream/WebSocket.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/FoundationTransport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/TCPTransport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/Starscream/Sources/Transport/Transport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/DerivedSources/resource_bundle_accessor.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/Starscream.build/sources"
+    },
+    "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/ActiveCallViewController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/AgoraCallAudioEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallModels.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallProtocols.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/CallUIComponents.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/IncomingCallViewController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/Sources/TevioCallModule/SocketManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/DerivedSources/resource_bundle_accessor.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/TevioCallModule.build/sources"
+    },
+    "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}

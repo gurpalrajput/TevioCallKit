@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/primary.swiftdeps"
+  },
+  "/Users/gaurav/Documents/TevioCallKit/.build/checkouts/AgoraRtcEngine_iOS/Sources/AgoraInfra_iOS/AgoraInfra_iOS.swift": {
+    "dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/AgoraInfra_iOS.d",
+    "object": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/AgoraInfra_iOS.swift.o",
+    "swiftmodule": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/AgoraInfra_iOS~partial.swiftmodule",
+    "swift-dependencies": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/AgoraInfra_iOS.swiftdeps",
+    "diagnostics": "/Users/gaurav/Documents/TevioCallKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/AgoraInfra_iOS.dia"
+  }
+}
