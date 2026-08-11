@@ -4,10 +4,11 @@ import AgoraRtcKit
 #endif
 
 #if canImport(AgoraRtcKit) && !targetEnvironment(macCatalyst)
-public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
+public final class AgoraCallAudioEngine: NSObject, CallAudioEngining, CallAudioErrorReporting {
     public var onRemoteUserJoined: (() -> Void)?
     public var onRemoteUserLeft: (() -> Void)?
     public var onRemoteMuteChanged: ((Bool) -> Void)?
+    public var onError: ((String) -> Void)?
 
     private var agoraEngine: AgoraRtcEngineKit?
     private var payload: CallPayload?
@@ -21,17 +22,24 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
         agoraEngine = AgoraRtcEngineKit.sharedEngine(withAppId: payload.appId, delegate: self)
         agoraEngine?.disableVideo()
         agoraEngine?.setChannelProfile(.communication)
-        agoraEngine?.setEnableSpeakerphone(false)
+        let speakerResult = agoraEngine?.setEnableSpeakerphone(false) ?? -1
+        if speakerResult != 0 {
+            onError?("Unable to configure call audio.")
+        }
     }
 
     public func joinChannel() {
         guard let payload else { return }
-        agoraEngine?.joinChannel(
+        let result = agoraEngine?.joinChannel(
             byToken: payload.agoraToken,
             channelId: payload.threadId,
             info: nil,
             uid: UInt(payload.uid) ?? 0
-        )
+        ) ?? -1
+
+        if result != 0 {
+            onError?("Unable to join the call channel.")
+        }
     }
 
     public func leaveChannel() {
@@ -52,6 +60,10 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
 }
 
 extension AgoraCallAudioEngine: AgoraRtcEngineDelegate {
+    public func rtcEngine(_ engine: AgoraRtcEngineKit, didOccurError errorCode: AgoraErrorCode) {
+        onError?("Call audio error: \(errorCode.rawValue)")
+    }
+
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
         onRemoteUserJoined?()
     }
@@ -65,10 +77,11 @@ extension AgoraCallAudioEngine: AgoraRtcEngineDelegate {
     }
 }
 #else
-public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
+public final class AgoraCallAudioEngine: NSObject, CallAudioEngining, CallAudioErrorReporting {
     public var onRemoteUserJoined: (() -> Void)?
     public var onRemoteUserLeft: (() -> Void)?
     public var onRemoteMuteChanged: ((Bool) -> Void)?
+    public var onError: ((String) -> Void)?
 
     public override init() {
         super.init()
