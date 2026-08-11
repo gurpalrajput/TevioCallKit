@@ -11,16 +11,12 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
 
     private var agoraEngine: AgoraRtcEngineKit?
     private var payload: CallPayload?
-    private var joinedChannelID: String?
 
     public override init() {
         super.init()
     }
 
     public func configure(with payload: CallPayload) {
-        if self.payload?.threadId == payload.threadId, agoraEngine != nil {
-            return
-        }
         self.payload = payload
         agoraEngine = AgoraRtcEngineKit.sharedEngine(withAppId: payload.appId, delegate: self)
         agoraEngine?.disableVideo()
@@ -30,22 +26,18 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
 
     public func joinChannel() {
         guard let payload else { return }
-        guard joinedChannelID != payload.threadId else { return }
         agoraEngine?.joinChannel(
             byToken: payload.agoraToken,
             channelId: payload.threadId,
             info: nil,
             uid: UInt(payload.uid) ?? 0
         )
-        joinedChannelID = payload.threadId
     }
 
     public func leaveChannel() {
-        guard agoraEngine != nil else { return }
         agoraEngine?.leaveChannel(nil)
         AgoraRtcEngineKit.destroy()
         agoraEngine = nil
-        joinedChannelID = nil
     }
 
     public func setMuted(_ isMuted: Bool) {
@@ -57,8 +49,6 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
     }
 
     public func didActivateAudioSession(_ audioSession: AVAudioSession) {}
-
-    public func didDeactivateAudioSession(_ audioSession: AVAudioSession) {}
 }
 
 extension AgoraCallAudioEngine: AgoraRtcEngineDelegate {
@@ -95,7 +85,5 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
     public func setSpeakerEnabled(_ isEnabled: Bool) {}
 
     public func didActivateAudioSession(_ audioSession: AVAudioSession) {}
-
-    public func didDeactivateAudioSession(_ audioSession: AVAudioSession) {}
 }
 #endif

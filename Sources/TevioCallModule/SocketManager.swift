@@ -64,7 +64,6 @@ public final class SocketManager: NSObject, CallTransporting {
     private var pendingStatusPayloads: [[String: Any]] = []
     private var pendingSubscriptions = Set<String>()
     private var isManuallyClosed = false
-    private var pendingConnectionRequests: [UUID: (Bool) -> Void] = [:]
     private var currentState: ConnectionState = .idle {
         didSet {
             callbackQueue.async { [currentState, onStateChange] in
@@ -120,22 +119,6 @@ public final class SocketManager: NSObject, CallTransporting {
             }
         }
         connectIfNeeded()
-    }
-
-    public func ensureConnected(timeout: TimeInterval, completion: @escaping (Bool) -> Void) {
-        if socket.status == .connected {
-            completion(true)
-            return
-        }
-
-        let requestID = UUID()
-        pendingConnectionRequests[requestID] = completion
-        connectIfNeeded()
-
-        callbackQueue.asyncAfter(deadline: .now() + timeout) { [weak self] in
-            guard let self, let callback = self.pendingConnectionRequests.removeValue(forKey: requestID) else { return }
-            callback(false)
-        }
     }
 
     public func disconnect() {
@@ -224,9 +207,6 @@ public final class SocketManager: NSObject, CallTransporting {
             guard let self else { return }
             self.debugLog("client event connect")
             self.currentState = .connected
-            let callbacks = self.pendingConnectionRequests.values
-            self.pendingConnectionRequests.removeAll()
-            callbacks.forEach { $0(true) }
             self.flushPendingStatusPayloads()
             self.resubscribeAllThreads()
         }
@@ -250,9 +230,6 @@ public final class SocketManager: NSObject, CallTransporting {
             let message = (data.first as? String) ?? "Socket error"
             self.debugLog("client event error payload=\(self.stringify(data))")
             self.currentState = .failed(message)
-            let callbacks = self.pendingConnectionRequests.values
-            self.pendingConnectionRequests.removeAll()
-            callbacks.forEach { $0(false) }
             self.notifyRawEvent(name: SocketClientEvent.error.rawValue, items: data)
         }
 
