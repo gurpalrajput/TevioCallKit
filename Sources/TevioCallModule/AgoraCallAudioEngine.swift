@@ -12,6 +12,7 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining, CallAudioE
 
     private var agoraEngine: AgoraRtcEngineKit?
     private var payload: CallPayload?
+    private var speakerEnabled = false
 
     public override init() {
         super.init()
@@ -19,13 +20,10 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining, CallAudioE
 
     public func configure(with payload: CallPayload) {
         self.payload = payload
+        speakerEnabled = false
         agoraEngine = AgoraRtcEngineKit.sharedEngine(withAppId: payload.appId, delegate: self)
         agoraEngine?.disableVideo()
         agoraEngine?.setChannelProfile(.communication)
-        let speakerResult = agoraEngine?.setEnableSpeakerphone(false) ?? -1
-        if speakerResult != 0 {
-            onError?("Unable to configure call audio.")
-        }
     }
 
     public func joinChannel() {
@@ -53,10 +51,13 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining, CallAudioE
     }
 
     public func setSpeakerEnabled(_ isEnabled: Bool) {
+        speakerEnabled = isEnabled
         agoraEngine?.setEnableSpeakerphone(isEnabled)
     }
 
-    public func didActivateAudioSession(_ audioSession: AVAudioSession) {}
+    public func didActivateAudioSession(_ audioSession: AVAudioSession) {
+        agoraEngine?.setEnableSpeakerphone(speakerEnabled)
+    }
 }
 
 extension AgoraCallAudioEngine: AgoraRtcEngineDelegate {
