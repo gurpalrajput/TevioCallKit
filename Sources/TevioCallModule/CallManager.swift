@@ -11,6 +11,11 @@ import UIKit
 
 @MainActor
 public final class CallManager: NSObject {
+    private enum PendingCallUIPresentation: Equatable {
+        case incoming
+        case active(fromCallKit: Bool)
+    }
+
     public private(set) var currentSession: CallSession?
 
     private weak var transport: CallTransporting?
@@ -44,13 +49,25 @@ public final class CallManager: NSObject {
     private weak var activeCallController: UIViewController?
     private var audioPlayer: AVAudioPlayer?
     private var shouldJoinOnAudioActivation = false
+    private var hasStartedJoiningCurrentCall = false
+    private var joinChannelFallbackWorkItem: DispatchWorkItem?
+    #if canImport(CallKit) && !targetEnvironment(macCatalyst)
+    private var pendingAnswerActionTimeoutWorkItem: DispatchWorkItem?
+    #endif
     private let defaultMutedState = false
     private let defaultSpeakerEnabledState = false
+    private let lifecycleBackgroundTaskDuration: TimeInterval = 5
+    private let joinChannelFallbackDelay: TimeInterval = 1.5
+    private let answerActionFulfillmentTimeout: TimeInterval = 3
     /// Tracks whether the native CallKit UI was suppressed for the current
     /// incoming call because the app was in the foreground. When `true`,
     /// answer/end actions bypass CXCallController and go directly through
     /// our custom call UI to avoid the iPad full-screen CallKit overlay.
     private var didSuppressCallKitUI = false
+    private var pendingCallUIPresentation: PendingCallUIPresentation?
+    #if canImport(CallKit) && !targetEnvironment(macCatalyst)
+    private var pendingAnswerAction: CXAnswerCallAction?
+    #endif
 
     public init(
         transport: CallTransporting,
@@ -78,6 +95,12 @@ public final class CallManager: NSObject {
         registry.desiredPushTypes = [.voIP]
         self.registry = registry
         #endif
+    }
+
+    public func notifyCallUIHostDidBecomeReady() {
+        print("☎️ [CallManager] notifyCallUIHostDidBecomeReady — hostReady: \(host?.isCallUIHostReady ?? false), pendingUI: \(String(describing: pendingCallUIPresentation))")
+        processPendingCallUIPresentationIfPossible()
+        fulfillPendingAnswerActionIfNeeded(reason: "host_ready")
     }
 
     public func startOutgoingCall(request: OutgoingCallRequest) {
@@ -209,9 +232,10 @@ public final class CallManager: NSObject {
             return
         }
 
-        print("☎️ [CallManager] handleIncomingPush — NEW incoming call, creating session")
+        let incomingPresentationMode: IncomingCallPresentationMode = shouldBypassCallKitForIncomingCall() ? .inApp : .callKit
+        print("☎️ [CallManager] handleIncomingPush — NEW incoming call, creating session presentationMode: \(incomingPresentationMode)")
         host?.prepareForIncomingCall()
-        createIncomingSession(with: payload)
+        createIncomingSession(with: payload, presentationMode: incomingPresentationMode)
         reportIncomingCall(completion: completion)
     }
 
@@ -230,11 +254,15 @@ public final class CallManager: NSObject {
         updateActiveCallStatus(text: payload.role == .caller ? configuration.ringingText : configuration.connectingText)
     }
 
-    private func createIncomingSession(with payload: CallPayload) {
+    private func createIncomingSession(with payload: CallPayload, presentationMode: IncomingCallPresentationMode) {
         pendingDismissWorkItem?.cancel()
         stopElapsedTimer()
         stopListeningForCallStatus()
-        currentSession = CallSession(payload: payload, state: .ringing)
+        currentSession = CallSession(
+            payload: payload,
+            state: .ringing,
+            incomingPresentationMode: presentationMode
+        )
         fetchThreadDetailsIfNeeded(threadId: payload.threadId)
         transport?.connectIfNeeded()
         transport?.startListening(threadId: payload.threadId) { [weak self] event in
@@ -248,11 +276,30 @@ public final class CallManager: NSObject {
             return
         }
 
+        if session.hasReportedIncomingCallToSystem || session.hasPresentedIncomingCallUI {
+            print("☎️ [CallManager] reportIncomingCall — already handled for UUID: \(session.callUUID)")
+            completion()
+            return
+        }
+
+        if session.incomingPresentationMode == .inApp {
+            print("☎️ [CallManager] reportIncomingCall — foreground path, bypassing CallKit for UUID: \(session.callUUID)")
+            didSuppressCallKitUI = true
+            startUnansweredTimer()
+            transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
+            presentIncomingCallIfNeeded()
+            completion()
+            return
+        }
+
         #if canImport(CallKit) && !targetEnvironment(macCatalyst)
         let update = CXCallUpdate()
         update.localizedCallerName = session.payload.callerName
         update.hasVideo = false
 
+        updateCurrentSession {
+            $0.hasReportedIncomingCallToSystem = true
+        }
         print("☎️ [CallManager] reportIncomingCall — reporting to CXProvider, UUID: \(session.callUUID)")
         provider.reportNewIncomingCall(with: session.callUUID, update: update) { [weak self] error in
             guard let self else {
@@ -262,24 +309,13 @@ public final class CallManager: NSObject {
             DispatchQueue.main.async {
                 if let error {
                     print("☎️ [CallManager] reportIncomingCall — CXProvider error: \(error.localizedDescription)")
+                    self.updateCurrentSession {
+                        $0.hasReportedIncomingCallToSystem = false
+                    }
                 } else {
                     self.startUnansweredTimer()
                     self.transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
-                    let isForeground = self.host?.isAppInForeground == true
-                    print("☎️ [CallManager] reportIncomingCall — success, isForeground: \(isForeground)")
-                    if isForeground {
-                        // Immediately suppress the native CallKit UI so it
-                        // doesn't flash over our custom incoming call screen.
-                        // On iPad this prevents the full-screen CallKit overlay.
-                        print("☎️ [CallManager] reportIncomingCall — suppressing CallKit UI (foreground)")
-                        self.provider.reportCall(
-                            with: session.callUUID,
-                            endedAt: nil,
-                            reason: .answeredElsewhere
-                        )
-                        self.didSuppressCallKitUI = true
-                        self.presentIncomingCall()
-                    }
+                    print("☎️ [CallManager] reportIncomingCall — success, CallKit active")
                 }
                 completion()
             }
@@ -287,9 +323,8 @@ public final class CallManager: NSObject {
         #else
         startUnansweredTimer()
         transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
-        if host?.isAppInForeground == true {
-            presentIncomingCall()
-        }
+        didSuppressCallKitUI = true
+        presentIncomingCallIfNeeded()
         completion()
         #endif
     }
@@ -300,6 +335,12 @@ public final class CallManager: NSObject {
         markFailed: Bool = false,
         completion: @escaping () -> Void
     ) {
+        if shouldBypassCallKitForIncomingCall() {
+            print("☎️ [CallManager] reportTransient — skipping CallKit transient while app is foregrounded")
+            completion()
+            return
+        }
+
         #if canImport(CallKit) && !targetEnvironment(macCatalyst)
         let update = CXCallUpdate()
         update.localizedCallerName = payload?.callerName ?? configuration.appName
@@ -339,8 +380,24 @@ public final class CallManager: NSObject {
         #endif
     }
 
-    private func presentIncomingCall() {
+    private func presentIncomingCallIfNeeded() {
         guard let session = currentSession else { return }
+        guard !session.hasPresentedIncomingCallUI else {
+            print("☎️ [CallManager] presentIncomingCallIfNeeded — already presented for UUID: \(session.callUUID)")
+            return
+        }
+        guard isCallUIHostReady else {
+            print("☎️ [CallManager] presentIncomingCallIfNeeded — deferring until host is ready")
+            pendingCallUIPresentation = .incoming
+            return
+        }
+
+        updateCurrentSession {
+            $0.hasPresentedIncomingCallUI = true
+        }
+        guard let currentSession else { return }
+        pendingCallUIPresentation = nil
+
         let model = incomingViewModel ?? IncomingCallViewModel()
         model.onAccept = { [weak self] in
             self?.stopRingtone()
@@ -350,7 +407,7 @@ public final class CallManager: NSObject {
             self?.stopRingtone()
             self?.declineCurrentCall()
         }
-        model.update(session: session, configuration: configuration)
+        model.update(session: currentSession, configuration: configuration)
         incomingViewModel = model
         let controller = UIHostingController(rootView: IncomingCallView(model: model))
         controller.modalPresentationStyle = .fullScreen
@@ -361,6 +418,16 @@ public final class CallManager: NSObject {
 
     private func presentActiveCall(fromCallKit: Bool) {
         guard let session = currentSession else { return }
+        guard isCallUIHostReady else {
+            print("☎️ [CallManager] presentActiveCall — deferring until host is ready, fromCallKit: \(fromCallKit)")
+            pendingCallUIPresentation = .active(fromCallKit: fromCallKit)
+            return
+        }
+
+        pendingCallUIPresentation = nil
+        if fromCallKit {
+            print("☎️ [CallManager] presentActiveCall — resuming deferred active UI after host readiness")
+        }
         let model = activeViewModel ?? ActiveCallViewModel()
         applyDefaultAudioState(to: model)
         model.onToggleMute = { [weak self, weak model] in
@@ -381,7 +448,6 @@ public final class CallManager: NSObject {
         let controller = UIHostingController(rootView: ActiveCallView(model: model))
         controller.modalPresentationStyle = .fullScreen
         activeCallController = controller
-        shouldJoinOnAudioActivation = fromCallKit
 
         if let incomingController = incomingCallController,
            let presenter = incomingController.presentingViewController {
@@ -394,6 +460,7 @@ public final class CallManager: NSObject {
         }
 
         host?.presentActiveCall(controller)
+        fulfillPendingAnswerActionIfNeeded(reason: "active_ui_presented")
     }
 
     private func fetchThreadDetailsIfNeeded(threadId: String) {
@@ -413,20 +480,28 @@ public final class CallManager: NSObject {
     }
 
     private func handleAnsweredCall(fromCallKit: Bool) {
-        guard var session = currentSession else { return }
-        cancelUnansweredTimer()
-        pendingEndStatus = nil
-        stopRingtone()
-        host?.prepareForAnsweredCall()
-        transport?.connectIfNeeded()
-        audioEngine.configure(with: session.payload)
-        session.state = .connecting
-        currentSession = session
-        presentActiveCall(fromCallKit: fromCallKit)
-        if !fromCallKit {
-            audioEngine.joinChannel()
+        withLifecycleBackgroundTask(named: "TevioCallKit.AnswerCall") {
+            guard var session = currentSession else { return }
+            cancelUnansweredTimer()
+            pendingEndStatus = nil
+            stopRingtone()
+            pendingCallUIPresentation = nil
+            cancelJoinChannelFallback()
+            hasStartedJoiningCurrentCall = false
+            host?.prepareForAnsweredCall()
+            transport?.connectIfNeeded()
+            audioEngine.configure(with: session.payload)
+            session.state = .connecting
+            currentSession = session
+            shouldJoinOnAudioActivation = fromCallKit
+            presentActiveCall(fromCallKit: fromCallKit)
+            if fromCallKit {
+                scheduleJoinChannelFallback()
+            } else {
+                beginJoiningCurrentCall(source: "foreground_answer")
+            }
+            updateActiveCallStatus(text: configuration.connectingText)
         }
-        updateActiveCallStatus(text: configuration.connectingText)
     }
 
     private func handleRemoteStatus(_ event: RemoteCallStatusEvent) {
@@ -454,41 +529,46 @@ public final class CallManager: NSObject {
     }
 
     private func finalizeCall(status: CallStatus, emitStatus: Bool, dismissAfter: TimeInterval = 0) {
-        let callUUID = currentSession?.callUUID
-        pendingDismissWorkItem?.cancel()
-        cancelUnansweredTimer()
-        stopElapsedTimer()
-        audioEngine.leaveChannel()
+        withLifecycleBackgroundTask(named: "TevioCallKit.FinalizeCall") {
+            let callUUID = currentSession?.callUUID
+            pendingDismissWorkItem?.cancel()
+            cancelUnansweredTimer()
+            stopElapsedTimer()
+            cancelJoinChannelFallback()
+            audioEngine.leaveChannel()
 
-        if emitStatus, let threadId = currentSession?.payload.threadId {
-            transport?.emit(status: status, threadId: threadId, completion: nil)
-            if shouldClearRemoteStatus(after: status) {
-                transport?.emit(status: .none, threadId: threadId, completion: nil)
+            if emitStatus, let threadId = currentSession?.payload.threadId {
+                transport?.emit(status: status, threadId: threadId, completion: nil)
+                if shouldClearRemoteStatus(after: status) {
+                    transport?.emit(status: .none, threadId: threadId, completion: nil)
+                }
             }
-        }
 
-        stopListeningForCallStatus()
-        updateActiveCallStatus(text: message(for: status))
-        stopRingtone()
-        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        if let callUUID, !didSuppressCallKitUI {
-            // Only report to CallKit if we haven't already suppressed it.
-            // When didSuppressCallKitUI is true, the call was already reported
-            // as .answeredElsewhere during the foreground suppression.
-            print("☎️ [CallManager] finalizeCall — reporting call ended to CXProvider")
-            provider.reportCall(with: callUUID, endedAt: Date(), reason: callEndedReason(for: status))
-        }
-        #endif
-        if dismissAfter > 0 {
-            let workItem = DispatchWorkItem { [weak self] in
-                self?.resetCallPresentationState(animated: true)
+            fulfillPendingAnswerActionIfNeeded(reason: "call_finalizing")
+
+            stopListeningForCallStatus()
+            updateActiveCallStatus(text: message(for: status))
+            stopRingtone()
+            #if canImport(CallKit) && !targetEnvironment(macCatalyst)
+            if let callUUID, !didSuppressCallKitUI {
+                // Only report to CallKit if we haven't already suppressed it.
+                // When didSuppressCallKitUI is true, the call was already reported
+                // as .answeredElsewhere during the foreground suppression.
+                print("☎️ [CallManager] finalizeCall — reporting call ended to CXProvider")
+                provider.reportCall(with: callUUID, endedAt: Date(), reason: callEndedReason(for: status))
             }
-            pendingDismissWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + dismissAfter, execute: workItem)
-            return
-        }
+            #endif
+            if dismissAfter > 0 {
+                let workItem = DispatchWorkItem { [weak self] in
+                    self?.resetCallPresentationState(animated: true)
+                }
+                pendingDismissWorkItem = workItem
+                DispatchQueue.main.asyncAfter(deadline: .now() + dismissAfter, execute: workItem)
+                return
+            }
 
-        resetCallPresentationState(animated: true)
+            resetCallPresentationState(animated: true)
+        }
     }
 
     private func finishCallUI() {
@@ -509,6 +589,15 @@ public final class CallManager: NSObject {
         incomingCallController = nil
         pendingEndStatus = nil
         didSuppressCallKitUI = false
+        pendingCallUIPresentation = nil
+        shouldJoinOnAudioActivation = false
+        hasStartedJoiningCurrentCall = false
+        cancelJoinChannelFallback()
+        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
+        pendingAnswerActionTimeoutWorkItem?.cancel()
+        pendingAnswerActionTimeoutWorkItem = nil
+        pendingAnswerAction = nil
+        #endif
     }
 
     private func dismissPresentedCallUI(animated: Bool) {
@@ -561,6 +650,110 @@ public final class CallManager: NSObject {
 
     private func stopListeningForCallStatus() {
         transport?.stopListening(threadId: currentSession?.payload.threadId)
+    }
+
+    private func shouldBypassCallKitForIncomingCall() -> Bool {
+        host?.isAppInForeground == true
+    }
+
+    private var isCallUIHostReady: Bool {
+        host?.isCallUIHostReady == true
+    }
+
+    private func updateCurrentSession(_ update: (inout CallSession) -> Void) {
+        guard var session = currentSession else { return }
+        update(&session)
+        currentSession = session
+    }
+
+    private func processPendingCallUIPresentationIfPossible() {
+        guard isCallUIHostReady, let pendingCallUIPresentation else { return }
+        print("☎️ [CallManager] processPendingCallUIPresentationIfPossible — resuming pending UI: \(pendingCallUIPresentation)")
+
+        switch pendingCallUIPresentation {
+        case .incoming:
+            presentIncomingCallIfNeeded()
+        case .active(let fromCallKit):
+            presentActiveCall(fromCallKit: fromCallKit)
+        }
+    }
+
+    private func beginJoiningCurrentCall(source: String) {
+        guard currentSession != nil else {
+            print("☎️ [CallManager] beginJoiningCurrentCall — skipped source=\(source), no current session")
+            return
+        }
+        guard !hasStartedJoiningCurrentCall else {
+            print("☎️ [CallManager] beginJoiningCurrentCall — skipped duplicate join source=\(source)")
+            return
+        }
+
+        print("☎️ [CallManager] beginJoiningCurrentCall — joining source=\(source)")
+        hasStartedJoiningCurrentCall = true
+        shouldJoinOnAudioActivation = false
+        cancelJoinChannelFallback()
+        audioEngine.joinChannel()
+        fulfillPendingAnswerActionIfNeeded(reason: "join_started_\(source)")
+    }
+
+    private func scheduleJoinChannelFallback() {
+        cancelJoinChannelFallback()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            print("☎️ [CallManager] scheduleJoinChannelFallback — firing fallback join")
+            self.beginJoiningCurrentCall(source: "fallback")
+        }
+        joinChannelFallbackWorkItem = workItem
+        print("☎️ [CallManager] scheduleJoinChannelFallback — scheduled in \(joinChannelFallbackDelay)s")
+        DispatchQueue.main.asyncAfter(deadline: .now() + joinChannelFallbackDelay, execute: workItem)
+    }
+
+    private func cancelJoinChannelFallback() {
+        joinChannelFallbackWorkItem?.cancel()
+        joinChannelFallbackWorkItem = nil
+    }
+
+    #if canImport(CallKit) && !targetEnvironment(macCatalyst)
+    private func schedulePendingAnswerActionFulfillmentTimeout() {
+        pendingAnswerActionTimeoutWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.fulfillPendingAnswerActionIfNeeded(reason: "timeout")
+        }
+        pendingAnswerActionTimeoutWorkItem = workItem
+        print("☎️ [CallManager] CXProvider.answerCall — scheduled deferred fulfill timeout in \(answerActionFulfillmentTimeout)s")
+        DispatchQueue.main.asyncAfter(deadline: .now() + answerActionFulfillmentTimeout, execute: workItem)
+    }
+
+    private func fulfillPendingAnswerActionIfNeeded(reason: String) {
+        guard let pendingAnswerAction else { return }
+        pendingAnswerActionTimeoutWorkItem?.cancel()
+        pendingAnswerActionTimeoutWorkItem = nil
+        print("☎️ [CallManager] CXProvider.answerCall — fulfilling deferred action reason=\(reason)")
+        self.pendingAnswerAction = nil
+        pendingAnswerAction.fulfill()
+    }
+    #endif
+
+    private func withLifecycleBackgroundTask(named name: String, operation: () -> Void) {
+        #if os(iOS) && !targetEnvironment(macCatalyst)
+        var backgroundTaskIdentifier: UIBackgroundTaskIdentifier = .invalid
+        backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask(withName: name) {
+            if backgroundTaskIdentifier != .invalid {
+                UIApplication.shared.endBackgroundTask(backgroundTaskIdentifier)
+                backgroundTaskIdentifier = .invalid
+            }
+        }
+        operation()
+        guard backgroundTaskIdentifier != .invalid else { return }
+        let taskIdentifier = backgroundTaskIdentifier
+        DispatchQueue.main.asyncAfter(deadline: .now() + lifecycleBackgroundTaskDuration) {
+            guard taskIdentifier != .invalid else { return }
+            UIApplication.shared.endBackgroundTask(taskIdentifier)
+        }
+        #else
+        operation()
+        #endif
     }
 
     private func bindAudioCallbacks() {
@@ -698,16 +891,19 @@ extension CallManager: CXProviderDelegate {
     }
 
     public func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
-        print("☎️ [CallManager] CXProvider.answerCall — state: \(currentSession.map { String(describing: $0.state) } ?? "nil"), didSuppressCallKitUI: \(didSuppressCallKitUI)")
+        print("☎️ [CallManager] CXProvider.answerCall — received state: \(currentSession.map { String(describing: $0.state) } ?? "nil"), didSuppressCallKitUI: \(didSuppressCallKitUI), hostReady: \(isCallUIHostReady)")
         // Only process if the call is still in ringing state.
         // If the call was already answered via the foreground path,
         // currentSession will be in .connecting or .active state.
         if currentSession?.state == .ringing, !didSuppressCallKitUI {
+            pendingAnswerAction = action
+            print("☎️ [CallManager] CXProvider.answerCall — deferring fulfill until answer transition is safe")
+            schedulePendingAnswerActionFulfillmentTimeout()
             handleAnsweredCall(fromCallKit: true)
         } else {
             print("☎️ [CallManager] CXProvider.answerCall — skipped (already handled or suppressed)")
+            action.fulfill()
         }
-        action.fulfill()
     }
 
     public func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
@@ -725,8 +921,10 @@ extension CallManager: CXProviderDelegate {
     public func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
         audioEngine.didActivateAudioSession(audioSession)
         if shouldJoinOnAudioActivation {
-            shouldJoinOnAudioActivation = false
-            audioEngine.joinChannel()
+            print("☎️ [CallManager] provider.didActivateAudioSession — joining from audio activation")
+            beginJoiningCurrentCall(source: "audio_activation")
+        } else {
+            print("☎️ [CallManager] provider.didActivateAudioSession — no pending audio-activation join")
         }
     }
 
@@ -744,4 +942,3 @@ extension CallManager: CXProviderDelegate {
     }
 }
 #endif
-

@@ -63,6 +63,8 @@ public final class SocketManager: NSObject, CallTransporting {
     private var dynamicListeners: [String: ([String: Any]) -> Void] = [:]
     private var pendingStatusPayloads: [[String: Any]] = []
     private var pendingSubscriptions = Set<String>()
+    private var subscribedThreadIDs = Set<String>()
+    private var attachedStatusChannelsByThreadID: [String: String] = [:]
     private var isManuallyClosed = false
     private var currentState: ConnectionState = .idle {
         didSet {
@@ -156,12 +158,15 @@ public final class SocketManager: NSObject, CallTransporting {
     }
 
     public func startListening(threadId: String, handler: @escaping (RemoteCallStatusEvent) -> Void) {
+        let hadExistingHandler = handlersByThreadID[threadId] != nil
         handlersByThreadID[threadId] = handler
         pendingSubscriptions.insert(threadId)
-        debugLog("startListening threadId=\(threadId)")
+        debugLog("startListening threadId=\(threadId) hadExistingHandler=\(hadExistingHandler)")
         connectIfNeeded()
-        attachStatusChannelListenerIfNeeded(threadId: threadId)
-        subscribeIfNeeded(threadId: threadId)
+        if !hadExistingHandler {
+            attachStatusChannelListenerIfNeeded(threadId: threadId)
+            subscribeIfNeeded(threadId: threadId)
+        }
     }
 
     public func stopListening(threadId: String?) {
@@ -215,6 +220,7 @@ public final class SocketManager: NSObject, CallTransporting {
             guard let self else { return }
             let message = (data.first as? String) ?? "Socket disconnected"
             self.debugLog("client event disconnect payload=\(self.stringify(data))")
+            self.subscribedThreadIDs.removeAll()
             self.currentState = .disconnected
             self.notifyRawEvent(name: SocketClientEvent.disconnect.rawValue, items: data)
             if !message.isEmpty, message != "Disconnect" {
@@ -229,6 +235,7 @@ public final class SocketManager: NSObject, CallTransporting {
             guard let self else { return }
             let message = (data.first as? String) ?? "Socket error"
             self.debugLog("client event error payload=\(self.stringify(data))")
+            self.subscribedThreadIDs.removeAll()
             self.currentState = .failed(message)
             self.notifyRawEvent(name: SocketClientEvent.error.rawValue, items: data)
         }
@@ -381,15 +388,18 @@ public final class SocketManager: NSObject, CallTransporting {
         guard
             socket.status == .connected,
             let subscribeEventName = configuration.subscribeEventName,
-            configuration.statusChannelNameProvider == nil
+            configuration.statusChannelNameProvider == nil,
+            !subscribedThreadIDs.contains(threadId)
         else {
             return
         }
 
         emitEvent(subscribeEventName, payload: ["thread_id": threadId], context: "subscribe")
+        subscribedThreadIDs.insert(threadId)
     }
 
     private func unsubscribeIfNeeded(threadId: String) {
+        subscribedThreadIDs.remove(threadId)
         guard
             socket.status == .connected,
             let unsubscribeEventName = configuration.unsubscribeEventName,
@@ -424,21 +434,29 @@ public final class SocketManager: NSObject, CallTransporting {
         handlersByThreadID.removeAll()
         pendingSubscriptions.removeAll()
         pendingStatusPayloads.removeAll()
+        subscribedThreadIDs.removeAll()
+        attachedStatusChannelsByThreadID.removeAll()
     }
 
     private func attachStatusChannelListenerIfNeeded(threadId: String) {
         guard let channelNameProvider = configuration.statusChannelNameProvider else { return }
         let channel = channelNameProvider(threadId)
+        if attachedStatusChannelsByThreadID[threadId] == channel {
+            debugLog("attach status channel listener skipped threadId=\(threadId) channel=\(channel)")
+            return
+        }
+
         debugLog("attach status channel listener threadId=\(threadId) channel=\(channel)")
         socket.off(channel)
         socket.on(channel) { [weak self] data, _ in
             self?.handle(eventName: channel, items: data)
         }
+        attachedStatusChannelsByThreadID[threadId] = channel
     }
 
     private func removeStatusChannelListenerIfNeeded(threadId: String) {
         guard let channelNameProvider = configuration.statusChannelNameProvider else { return }
-        let channel = channelNameProvider(threadId)
+        let channel = attachedStatusChannelsByThreadID.removeValue(forKey: threadId) ?? channelNameProvider(threadId)
         debugLog("remove status channel listener threadId=\(threadId) channel=\(channel)")
         socket.off(channel)
     }

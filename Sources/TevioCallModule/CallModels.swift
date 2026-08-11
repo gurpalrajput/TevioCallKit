@@ -107,6 +107,11 @@ public struct RemoteCallStatusEvent: Equatable {
     }
 }
 
+public enum IncomingCallPresentationMode: Equatable {
+    case callKit
+    case inApp
+}
+
 public struct CallSession: Equatable {
     public let callUUID: UUID
     public let payload: CallPayload
@@ -114,6 +119,9 @@ public struct CallSession: Equatable {
     public var state: CallSessionState
     public var startedAt: Date?
     public var elapsedSeconds: Int
+    public var incomingPresentationMode: IncomingCallPresentationMode
+    public var hasReportedIncomingCallToSystem: Bool
+    public var hasPresentedIncomingCallUI: Bool
 
     public init(
         callUUID: UUID = UUID(),
@@ -121,7 +129,10 @@ public struct CallSession: Equatable {
         details: CallThreadDetails? = nil,
         state: CallSessionState = .idle,
         startedAt: Date? = nil,
-        elapsedSeconds: Int = 0
+        elapsedSeconds: Int = 0,
+        incomingPresentationMode: IncomingCallPresentationMode = .callKit,
+        hasReportedIncomingCallToSystem: Bool = false,
+        hasPresentedIncomingCallUI: Bool = false
     ) {
         self.callUUID = callUUID
         self.payload = payload
@@ -129,5 +140,8 @@ public struct CallSession: Equatable {
         self.state = state
         self.startedAt = startedAt
         self.elapsedSeconds = elapsedSeconds
+        self.incomingPresentationMode = incomingPresentationMode
+        self.hasReportedIncomingCallToSystem = hasReportedIncomingCallToSystem
+        self.hasPresentedIncomingCallUI = hasPresentedIncomingCallUI
     }
 }

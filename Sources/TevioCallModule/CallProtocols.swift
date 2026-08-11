@@ -16,12 +16,19 @@ public protocol CallBackendProviding: AnyObject {
 
 public protocol CallHostCoordinating: AnyObject {
     var isAppInForeground: Bool { get }
+    var isCallUIHostReady: Bool { get }
     func prepareForIncomingCall()
     func prepareForAnsweredCall()
     func presentIncomingCall(_ viewController: UIViewController)
     func presentActiveCall(_ viewController: UIViewController)
     func dismissCallUI(animated: Bool)
     func didUpdateVoIPToken(_ token: String)
+}
+
+public extension CallHostCoordinating {
+    var isCallUIHostReady: Bool {
+        isAppInForeground
+    }
 }
 
 public protocol CallAudioEngining: AnyObject {

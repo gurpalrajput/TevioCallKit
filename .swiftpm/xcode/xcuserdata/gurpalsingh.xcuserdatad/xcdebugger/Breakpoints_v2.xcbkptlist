@@ -16,7 +16,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "294"
             endingLineNumber = "294"
-            landmarkName = "makeRemoteCallStatusEvent(eventName:items:)"
+            landmarkName = "handle(eventName:items:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -32,7 +32,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "291"
             endingLineNumber = "291"
-            landmarkName = "makeRemoteCallStatusEvent(eventName:items:)"
+            landmarkName = "handle(eventName:items:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
