@@ -9,10 +9,6 @@ public protocol CallTransporting: AnyObject {
     func stopListening(threadId: String?)
 }
 
-public protocol CallTransportEventReporting: AnyObject {
-    var onConnectionFailure: ((String) -> Void)? { get set }
-}
-
 public protocol CallBackendProviding: AnyObject {
     func initiateOutgoingCall(threadId: String, completion: @escaping (Result<CallPayload, Error>) -> Void)
     func fetchThreadDetails(threadId: String, completion: @escaping (Result<CallThreadDetails, Error>) -> Void)
@@ -40,15 +36,10 @@ public protocol CallAudioEngining: AnyObject {
     func didActivateAudioSession(_ audioSession: AVAudioSession)
 }
 
-public protocol CallAudioErrorReporting: AnyObject {
-    var onError: ((String) -> Void)? { get set }
-}
-
-public final class NoopCallAudioEngine: CallAudioEngining, CallAudioErrorReporting {
+public final class NoopCallAudioEngine: CallAudioEngining {
     public var onRemoteUserJoined: (() -> Void)?
     public var onRemoteUserLeft: (() -> Void)?
     public var onRemoteMuteChanged: ((Bool) -> Void)?
-    public var onError: ((String) -> Void)?
 
     public init() {}
 

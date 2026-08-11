@@ -7,7 +7,6 @@ import Foundation
 import PushKit
 #endif
 import SwiftUI
-import Toast
 import UIKit
 
 @MainActor
@@ -36,7 +35,6 @@ public final class CallManager: NSObject {
     private var elapsedTimer: Timer?
     private var pendingDismissWorkItem: DispatchWorkItem?
     private let terminalStatusDisplayDuration: TimeInterval = 2.5
-    private let toastDuration: TimeInterval = 3.0
     private let busyRetryInterval: TimeInterval = 0.6
     private let busyRetryCount = 3
     private var pendingEndStatus: CallStatus?
@@ -66,7 +64,6 @@ public final class CallManager: NSObject {
         provider.setDelegate(self, queue: nil)
         #endif
         bindAudioCallbacks()
-        bindTransportCallbacks()
     }
 
     public func start() {
@@ -86,9 +83,8 @@ public final class CallManager: NSObject {
                 switch result {
                 case .success(let payload):
                     self.beginOutgoingCall(with: payload)
-                case .failure(let error):
+                case .failure:
                     self.finishCallUI()
-                    self.showErrorPrompt(message: self.userVisibleErrorMessage(from: error, fallback: "Unable to start the call. Please try again."))
                 }
             }
         }
@@ -393,9 +389,6 @@ public final class CallManager: NSObject {
     private func handleRemoteTermination(status: CallStatus) {
         pendingEndStatus = nil
         guard currentSession != nil else { return }
-        if shouldShowPrompt(for: status) {
-            showErrorPrompt(message: message(for: status))
-        }
         finalizeCall(status: status, emitStatus: false, dismissAfter: terminalStatusDisplayDuration)
     }
 
@@ -505,14 +498,6 @@ public final class CallManager: NSObject {
     }
 
     private func bindAudioCallbacks() {
-        if let errorReporter = audioEngine as? CallAudioErrorReporting {
-            errorReporter.onError = { [weak self] message in
-                DispatchQueue.main.async {
-                    self?.handleSetupFailure(message: message)
-                }
-            }
-        }
-
         audioEngine.onRemoteUserJoined = { [weak self] in
             guard let self, var session = self.currentSession else { return }
             DispatchQueue.main.async {
@@ -535,49 +520,6 @@ public final class CallManager: NSObject {
                 self?.activeViewModel?.updateRemoteMuted(isMuted)
             }
         }
-    }
-
-    private func bindTransportCallbacks() {
-        guard let transport = transport as? CallTransportEventReporting else { return }
-        transport.onConnectionFailure = { [weak self] message in
-            DispatchQueue.main.async {
-                self?.handleTransportFailure(message: message)
-            }
-        }
-    }
-
-    private func handleTransportFailure(message: String) {
-        guard let session = currentSession else { return }
-
-        switch session.state {
-        case .connecting, .ringing:
-            handleSetupFailure(message: "Call connection failed: \(sanitized(message))")
-        case .idle, .active, .ending:
-            break
-        }
-    }
-
-    private func handleSetupFailure(message: String) {
-        guard currentSession != nil else {
-            showErrorPrompt(message: message)
-            return
-        }
-
-        stopListeningForCallStatus()
-        cancelUnansweredTimer()
-        stopElapsedTimer()
-        stopRingtone()
-        audioEngine.leaveChannel()
-        pendingDismissWorkItem?.cancel()
-        pendingDismissWorkItem = nil
-        shouldJoinOnAudioActivation = false
-        #if canImport(CallKit) && !targetEnvironment(macCatalyst)
-        if let callUUID = currentSession?.callUUID {
-            provider.reportCall(with: callUUID, endedAt: Date(), reason: .failed)
-        }
-        #endif
-        resetCallPresentationState(animated: true)
-        showErrorPrompt(message: message)
     }
 
     private func updateActiveCallStatus(text: String) {
@@ -667,72 +609,6 @@ public final class CallManager: NSObject {
         case .none, .visible:
             return false
         }
-    }
-
-    private func shouldShowPrompt(for status: CallStatus) -> Bool {
-        switch status {
-        case .busy, .declined, .notAnswered:
-            return true
-        case .none, .visible, .ended:
-            return false
-        }
-    }
-
-    private func showErrorPrompt(message: String) {
-        let cleanedMessage = sanitized(message)
-        guard !cleanedMessage.isEmpty else { return }
-
-        let showToast = {
-            guard let view = self.toastPresentationView() else { return }
-            var style = ToastStyle()
-            style.backgroundColor = UIColor(red: 0.63, green: 0.11, blue: 0.14, alpha: 0.94)
-            style.messageColor = .white
-            style.titleColor = .white
-            style.cornerRadius = 14
-            style.horizontalPadding = 16
-            style.verticalPadding = 12
-            view.hideAllToasts()
-            view.makeToast(cleanedMessage, duration: self.toastDuration, position: .top, style: style)
-        }
-
-        if toastPresentationView() == nil {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                showToast()
-            }
-            return
-        }
-
-        showToast()
-    }
-
-    private func toastPresentationView() -> UIView? {
-        if let activeView = activeCallController?.viewIfLoaded ?? activeCallController?.view {
-            return activeView.window ?? activeView
-        }
-
-        if let incomingView = incomingCallController?.viewIfLoaded ?? incomingCallController?.view {
-            return incomingView.window ?? incomingView
-        }
-
-        return UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow)?
-            .rootViewController?
-            .view
-    }
-
-    private func sanitized(_ message: String) -> String {
-        message.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func userVisibleErrorMessage(from error: Error, fallback: String) -> String {
-        let rawMessage = sanitized(error.localizedDescription)
-        guard !rawMessage.isEmpty, rawMessage != "The operation couldn’t be completed." else {
-            return fallback
-        }
-
-        return rawMessage
     }
 }
 

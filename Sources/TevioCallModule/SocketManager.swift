@@ -1,7 +1,7 @@
 import Foundation
 import SocketIO
 
-public final class SocketManager: NSObject, CallTransporting, CallTransportEventReporting {
+public final class SocketManager: NSObject, CallTransporting {
     public enum ConnectionState: Equatable {
         case idle
         case connecting
@@ -54,7 +54,6 @@ public final class SocketManager: NSObject, CallTransporting, CallTransportEvent
 
     public var onStateChange: ((ConnectionState) -> Void)?
     public var onRawEvent: ((String, [Any]) -> Void)?
-    public var onConnectionFailure: ((String) -> Void)?
 
     private let configuration: Configuration
     private let callbackQueue: DispatchQueue
@@ -481,12 +480,6 @@ public final class SocketManager: NSObject, CallTransporting, CallTransportEvent
     private func notifyState(_ state: ConnectionState) {
         callbackQueue.async { [onStateChange] in
             onStateChange?(state)
-        }
-
-        if case .failed(let message) = state {
-            callbackQueue.async { [onConnectionFailure] in
-                onConnectionFailure?(message)
-            }
         }
     }
 
