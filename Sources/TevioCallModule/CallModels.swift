@@ -1,5 +1,71 @@
 import Foundation
 
+enum CallPushPayloadSource: String {
+    case topLevel = "top-level"
+    case data = "data"
+    case apsPayload = "aps.payload"
+}
+
+struct CallPushFieldMatch {
+    let value: String
+    let source: CallPushPayloadSource
+}
+
+enum CallPushPayloadParser {
+    private static let candidatePayloadSources: [CallPushPayloadSource] = [.topLevel, .data, .apsPayload]
+
+    static func dictionary(for source: CallPushPayloadSource, in userInfo: [AnyHashable: Any]) -> [String: Any]? {
+        switch source {
+        case .topLevel:
+            return sanitizedDictionary(userInfo)
+        case .data:
+            return nestedDictionary(forKeys: ["data"], in: userInfo)
+        case .apsPayload:
+            return nestedDictionary(forKeys: ["aps", "payload"], in: userInfo)
+        }
+    }
+
+    static func stringValue(forKeys keys: [String], in userInfo: [AnyHashable: Any]) -> CallPushFieldMatch? {
+        for source in candidatePayloadSources {
+            guard let payload = dictionary(for: source, in: userInfo) else { continue }
+            for key in keys {
+                if let value = payload[key] as? String, !value.isEmpty {
+                    return CallPushFieldMatch(value: value, source: source)
+                }
+            }
+        }
+        return nil
+    }
+
+    private static func nestedDictionary(forKeys keys: [String], in userInfo: [AnyHashable: Any]) -> [String: Any]? {
+        var current: Any? = userInfo
+        for key in keys {
+            if let hashableDictionary = current as? [AnyHashable: Any] {
+                current = hashableDictionary[key]
+            } else if let stringDictionary = current as? [String: Any] {
+                current = stringDictionary[key]
+            } else {
+                current = nil
+            }
+        }
+
+        if let hashableDictionary = current as? [AnyHashable: Any] {
+            return sanitizedDictionary(hashableDictionary)
+        }
+        if let stringDictionary = current as? [String: Any] {
+            return stringDictionary
+        }
+        return nil
+    }
+
+    private static func sanitizedDictionary(_ dictionary: [AnyHashable: Any]) -> [String: Any] {
+        dictionary.reduce(into: [String: Any]()) { result, element in
+            guard let key = element.key as? String else { return }
+            result[key] = element.value
+        }
+    }
+}
+
 public enum CallStatus: String, Codable, CaseIterable {
     case none = "call-no-status"
     case visible = "call-visible"
@@ -55,12 +121,12 @@ public struct CallPayload: Codable, Equatable {
     }
 
     public init?(userInfo: [AnyHashable: Any]) {
-        let type = (userInfo["type"] as? String) ?? (userInfo["status"] as? String) ?? "AUDIO_CALL"
+        let type = CallPushPayloadParser.stringValue(forKeys: ["type", "status"], in: userInfo)?.value ?? "AUDIO_CALL"
         guard
-            let threadId = userInfo["thread_id"] as? String,
-            let uid = userInfo["uid"] as? String,
-            let agoraToken = (userInfo["agora_token"] as? String) ?? (userInfo["token"] as? String),
-            let appId = userInfo["app_id"] as? String
+            let threadId = CallPushPayloadParser.stringValue(forKeys: ["thread_id", "threadId"], in: userInfo)?.value,
+            let uid = CallPushPayloadParser.stringValue(forKeys: ["uid"], in: userInfo)?.value,
+            let agoraToken = CallPushPayloadParser.stringValue(forKeys: ["agora_token", "token"], in: userInfo)?.value,
+            let appId = CallPushPayloadParser.stringValue(forKeys: ["app_id"], in: userInfo)?.value
         else {
             return nil
         }
@@ -71,8 +137,8 @@ public struct CallPayload: Codable, Equatable {
             uid: uid,
             agoraToken: agoraToken,
             appId: appId,
-            callerName: (userInfo["caller_name"] as? String) ?? (userInfo["body"] as? String) ?? "Incoming Call",
-            role: CallRole(rawRole: userInfo["role"] as? String)
+            callerName: CallPushPayloadParser.stringValue(forKeys: ["caller_name", "body"], in: userInfo)?.value ?? "Incoming Call",
+            role: CallRole(rawRole: CallPushPayloadParser.stringValue(forKeys: ["role"], in: userInfo)?.value)
         )
     }
 }

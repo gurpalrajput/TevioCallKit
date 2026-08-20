@@ -21,6 +21,7 @@ public protocol CallHostCoordinating: AnyObject {
     func prepareForAnsweredCall()
     func presentIncomingCall(_ viewController: UIViewController)
     func presentActiveCall(_ viewController: UIViewController)
+    func presentError(message: String)
     func dismissCallUI(animated: Bool)
     func didUpdateVoIPToken(_ token: String)
 }
@@ -29,6 +30,8 @@ public extension CallHostCoordinating {
     var isCallUIHostReady: Bool {
         isAppInForeground
     }
+
+    func presentError(message: String) {}
 }
 
 public protocol CallAudioEngining: AnyObject {

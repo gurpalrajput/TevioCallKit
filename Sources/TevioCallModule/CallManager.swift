@@ -42,6 +42,7 @@ public final class CallManager: NSObject {
     private let terminalStatusDisplayDuration: TimeInterval = 2.5
     private let busyRetryInterval: TimeInterval = 0.6
     private let busyRetryCount = 3
+    private let duplicatePushSuppressionWindow: TimeInterval = 5
     private var pendingEndStatus: CallStatus?
     private var incomingViewModel: IncomingCallViewModel?
     private var activeViewModel: ActiveCallViewModel?
@@ -65,6 +66,7 @@ public final class CallManager: NSObject {
     /// our custom call UI to avoid the iPad full-screen CallKit overlay.
     private var didSuppressCallKitUI = false
     private var pendingCallUIPresentation: PendingCallUIPresentation?
+    private var recentPushEventTimestamps: [String: Date] = [:]
     #if canImport(CallKit) && !targetEnvironment(macCatalyst)
     private var pendingAnswerAction: CXAnswerCallAction?
     #endif
@@ -100,7 +102,6 @@ public final class CallManager: NSObject {
     public func notifyCallUIHostDidBecomeReady() {
         print("☎️ [CallManager] notifyCallUIHostDidBecomeReady — hostReady: \(host?.isCallUIHostReady ?? false), pendingUI: \(String(describing: pendingCallUIPresentation))")
         processPendingCallUIPresentationIfPossible()
-        fulfillPendingAnswerActionIfNeeded(reason: "host_ready")
     }
 
     public func startOutgoingCall(request: OutgoingCallRequest) {
@@ -111,8 +112,9 @@ public final class CallManager: NSObject {
                 switch result {
                 case .success(let payload):
                     self.beginOutgoingCall(with: payload)
-                case .failure:
+                case .failure(let error):
                     self.finishCallUI()
+                    self.host?.presentError(message: error.localizedDescription)
                 }
             }
         }
@@ -194,17 +196,25 @@ public final class CallManager: NSObject {
     }
 
     public func handleIncomingPush(payload: [AnyHashable: Any], completion: @escaping () -> Void) {
+        print("☎️ [CallManager] handleIncomingPush — raw payload: \(stringifyPushPayload(payload))")
         let incomingThreadId = threadId(from: payload)
         let incomingPayload = CallPayload(userInfo: payload)
+        let parsedStatus = parsedStatusEvent(from: payload)
 
-        print("☎️ [CallManager] handleIncomingPush — threadId: \(incomingThreadId ?? "nil"), currentSession: \(currentSession?.payload.threadId ?? "none"), state: \(currentSession.map { String(describing: $0.state) } ?? "nil"), isForeground: \(host?.isAppInForeground ?? false), didSuppressCallKitUI: \(didSuppressCallKitUI)")
+        print("☎️ [CallManager] handleIncomingPush — parsed threadId: \(incomingThreadId ?? "nil"), source: \(threadIdSource(from: payload)?.rawValue ?? "none"), parsedStatus: \(parsedStatus?.status.rawValue ?? "nil"), statusSource: \(parsedStatus?.source.rawValue ?? "none"), currentSession: \(currentSession?.payload.threadId ?? "none"), state: \(currentSession.map { String(describing: $0.state) } ?? "nil"), isForeground: \(host?.isAppInForeground ?? false), didSuppressCallKitUI: \(didSuppressCallKitUI)")
 
-        if let directStatus = directTerminationStatus(from: payload) {
-            print("☎️ [CallManager] handleIncomingPush — direct termination status: \(directStatus.rawValue)")
+        if shouldSuppressDuplicatePush(threadId: incomingThreadId, status: parsedStatus?.status.rawValue ?? incomingStatus(from: payload, payload: incomingPayload)) {
+            print("☎️ [CallManager] handleIncomingPush — duplicate suppression blocked handling")
+            completion()
+            return
+        }
+
+        if let directStatus = parsedStatus?.status {
+            print("☎️ [CallManager] handleIncomingPush — treating payload as terminal status: \(directStatus.rawValue)")
             if incomingThreadId == currentSession?.payload.threadId {
                 handleRemoteTermination(status: directStatus)
             }
-            reportTransientIncomingCallIfNeeded(payload: incomingPayload, endStatus: directStatus, completion: completion)
+            completion()
             return
         }
 
@@ -233,7 +243,7 @@ public final class CallManager: NSObject {
         }
 
         let incomingPresentationMode: IncomingCallPresentationMode = shouldBypassCallKitForIncomingCall() ? .inApp : .callKit
-        print("☎️ [CallManager] handleIncomingPush — NEW incoming call, creating session presentationMode: \(incomingPresentationMode)")
+        print("☎️ [CallManager] handleIncomingPush — treating payload as new incoming call, creating session presentationMode: \(incomingPresentationMode)")
         host?.prepareForIncomingCall()
         createIncomingSession(with: payload, presentationMode: incomingPresentationMode)
         reportIncomingCall(completion: completion)
@@ -410,6 +420,7 @@ public final class CallManager: NSObject {
         model.update(session: currentSession, configuration: configuration)
         incomingViewModel = model
         let controller = UIHostingController(rootView: IncomingCallView(model: model))
+        controller.restorationIdentifier = "TevioIncomingCallController"
         controller.modalPresentationStyle = .fullScreen
         incomingCallController = controller
         host?.presentIncomingCall(controller)
@@ -446,6 +457,7 @@ public final class CallManager: NSObject {
         model.update(session: session)
         activeViewModel = model
         let controller = UIHostingController(rootView: ActiveCallView(model: model))
+        controller.restorationIdentifier = "TevioActiveCallController"
         controller.modalPresentationStyle = .fullScreen
         activeCallController = controller
 
@@ -455,6 +467,7 @@ public final class CallManager: NSObject {
                 guard let self else { return }
                 self.incomingCallController = nil
                 presenter.present(controller, animated: true)
+                self.fulfillPendingAnswerActionIfNeeded(reason: "active_ui_presented_after_incoming_dismiss")
             }
             return
         }
@@ -693,7 +706,6 @@ public final class CallManager: NSObject {
         shouldJoinOnAudioActivation = false
         cancelJoinChannelFallback()
         audioEngine.joinChannel()
-        fulfillPendingAnswerActionIfNeeded(reason: "join_started_\(source)")
     }
 
     private func scheduleJoinChannelFallback() {
@@ -817,9 +829,9 @@ public final class CallManager: NSObject {
     }
 
     private func directTerminationStatus(from payload: [AnyHashable: Any]) -> CallStatus? {
-        let rawStatus = (payload["status"] as? String) ?? (payload["type"] as? String)
+        let rawStatus = CallPushPayloadParser.stringValue(forKeys: ["status", "type"], in: payload)
         guard let rawStatus else { return nil }
-        switch rawStatus {
+        switch rawStatus.value {
         case CallStatus.ended.rawValue:
             return .ended
         case CallStatus.declined.rawValue:
@@ -834,7 +846,66 @@ public final class CallManager: NSObject {
     }
 
     private func threadId(from payload: [AnyHashable: Any]) -> String? {
-        (payload["thread_id"] as? String) ?? (payload["threadId"] as? String)
+        CallPushPayloadParser.stringValue(forKeys: ["thread_id", "threadId"], in: payload)?.value
+    }
+
+    private func threadIdSource(from payload: [AnyHashable: Any]) -> CallPushPayloadSource? {
+        CallPushPayloadParser.stringValue(forKeys: ["thread_id", "threadId"], in: payload)?.source
+    }
+
+    private func parsedStatusEvent(from payload: [AnyHashable: Any]) -> (status: CallStatus, source: CallPushPayloadSource)? {
+        guard
+            let rawStatus = CallPushPayloadParser.stringValue(forKeys: ["status", "type"], in: payload),
+            let status = directTerminationStatus(from: payload)
+        else {
+            return nil
+        }
+        return (status: status, source: rawStatus.source)
+    }
+
+    private func incomingStatus(from payload: [AnyHashable: Any], payload incomingPayload: CallPayload?) -> String? {
+        if let rawStatus = CallPushPayloadParser.stringValue(forKeys: ["status", "type"], in: payload)?.value {
+            return rawStatus
+        }
+        return incomingPayload?.type
+    }
+
+    private func shouldSuppressDuplicatePush(threadId: String?, status: String?) -> Bool {
+        pruneExpiredPushEventTimestamps()
+        guard
+            let threadId,
+            let status
+        else {
+            return false
+        }
+
+        let key = "\(threadId)|\(status)"
+        let now = Date()
+        if let recentDate = recentPushEventTimestamps[key], now.timeIntervalSince(recentDate) < duplicatePushSuppressionWindow {
+            return true
+        }
+
+        recentPushEventTimestamps[key] = now
+        return false
+    }
+
+    private func pruneExpiredPushEventTimestamps() {
+        let now = Date()
+        recentPushEventTimestamps = recentPushEventTimestamps.filter { _, timestamp in
+            now.timeIntervalSince(timestamp) < duplicatePushSuppressionWindow
+        }
+    }
+
+    private func stringifyPushPayload(_ payload: [AnyHashable: Any]) -> String {
+        let normalizedPayload = CallPushPayloadParser.dictionary(for: .topLevel, in: payload) ?? [:]
+        guard
+            JSONSerialization.isValidJSONObject(normalizedPayload),
+            let data = try? JSONSerialization.data(withJSONObject: normalizedPayload, options: [.sortedKeys]),
+            let string = String(data: data, encoding: .utf8)
+        else {
+            return String(describing: payload)
+        }
+        return string
     }
 
     private func emitBusyStatus(
