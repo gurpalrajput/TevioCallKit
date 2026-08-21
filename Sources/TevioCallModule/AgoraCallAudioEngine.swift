@@ -35,6 +35,11 @@ public final class AgoraCallAudioEngine: NSObject, CallAudioEngining {
     }
 
     public func leaveChannel() {
+        guard agoraEngine != nil else {
+            print("☎️ [AgoraCallAudioEngine] leaveChannel — skipped, engine already released")
+            return
+        }
+        print("☎️ [AgoraCallAudioEngine] leaveChannel — leaving current channel")
         agoraEngine?.leaveChannel(nil)
         AgoraRtcEngineKit.destroy()
         agoraEngine = nil
@@ -57,6 +62,7 @@ extension AgoraCallAudioEngine: AgoraRtcEngineDelegate {
     }
 
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didOfflineOfUid uid: UInt, reason: AgoraUserOfflineReason) {
+        print("☎️ [AgoraCallAudioEngine] didOfflineOfUid — uid: \(uid), reason: \(reason.rawValue)")
         onRemoteUserLeft?()
     }
 

@@ -11,6 +11,11 @@ struct CallPushFieldMatch {
     let source: CallPushPayloadSource
 }
 
+public enum CallPushTransport: String, Codable {
+    case voip = "voip"
+    case remoteNotification = "remote_notification"
+}
+
 enum CallPushPayloadParser {
     private static let candidatePayloadSources: [CallPushPayloadSource] = [.topLevel, .data, .apsPayload]
 
@@ -35,6 +40,29 @@ enum CallPushPayloadParser {
             }
         }
         return nil
+    }
+
+    static func normalizedToken(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "_", with: "-")
+            .replacingOccurrences(of: " ", with: "-")
+    }
+
+    static func normalizedIncomingCallEventName(from rawValue: String?) -> String? {
+        guard let rawValue else { return nil }
+
+        let normalizedValue = normalizedToken(rawValue)
+        let collapsedValue = normalizedValue.replacingOccurrences(of: "-", with: "")
+        switch collapsedValue {
+        case "audiocall":
+            return "incoming-audio-call"
+        case "videocall":
+            return "incoming-video-call"
+        default:
+            return nil
+        }
     }
 
     private static func nestedDictionary(forKeys keys: [String], in userInfo: [AnyHashable: Any]) -> [String: Any]? {
@@ -121,6 +149,10 @@ public struct CallPayload: Codable, Equatable {
     }
 
     public init?(userInfo: [AnyHashable: Any]) {
+        self.init(voipUserInfo: userInfo)
+    }
+
+    init?(voipUserInfo userInfo: [AnyHashable: Any]) {
         let type = CallPushPayloadParser.stringValue(forKeys: ["type", "status"], in: userInfo)?.value ?? "AUDIO_CALL"
         guard
             let threadId = CallPushPayloadParser.stringValue(forKeys: ["thread_id", "threadId"], in: userInfo)?.value,

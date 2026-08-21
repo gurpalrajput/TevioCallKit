@@ -37,7 +37,10 @@ Shared Swift Package for Tevio voice calling across Customer, Vendor, and Courie
 5. Create `CallManager` at app launch.
 6. Call `start()` to register for VoIP pushes.
 7. Forward outgoing-call actions into `startOutgoingCall(request:)`.
-8. If the host already receives PushKit events itself, forward payloads into `handleIncomingPush(payload:completion:)`.
+8. Route incoming pushes by source:
+   - `PKPushRegistryDelegate.pushRegistry(_:didReceiveIncomingPushWith:for:completion:)` should forward into `handleIncomingPush(payload:source:completion:)` with `.voip`
+   - regular APNs / FCM handlers such as `UNUserNotificationCenterDelegate` or `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` must not create a new incoming call from notification payloads
+   - regular notifications may be ignored completely, or forwarded with `.remoteNotification` only for terminal status cleanup
 
 ## Required app responsibilities
 
@@ -48,6 +51,8 @@ Your app must provide:
   - `uid`
   - `agora_token` or `token`
   - `app_id`
+- if you also send a regular APNs / FCM notification for the same call, do not treat that payload as a second call invite
+- only VoIP pushes are allowed to create a new incoming call session inside `TevioCallKit`
 - a backend that can:
   - start outgoing calls
   - fetch display details like `name`, `roleDescription`, and `imageURL`

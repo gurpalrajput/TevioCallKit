@@ -11,6 +11,45 @@ import UIKit
 
 @MainActor
 public final class CallManager: NSObject {
+    private final class PushKitCompletionGuard {
+        private let lock = NSLock()
+        private let completion: () -> Void
+        private var hasCompleted = false
+        private var fallbackWorkItem: DispatchWorkItem?
+
+        init(timeout: TimeInterval, completion: @escaping () -> Void) {
+            self.completion = completion
+
+            let fallbackWorkItem = DispatchWorkItem { [weak self] in
+                self?.invoke(reason: "fallback_timeout", fallbackFired: true)
+            }
+            self.fallbackWorkItem = fallbackWorkItem
+            print("☎️ [CallManager] PushKit — completion fallback scheduled in \(timeout)s")
+            DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: fallbackWorkItem)
+        }
+
+        func invoke(reason: String, fallbackFired: Bool = false) {
+            lock.lock()
+            guard !hasCompleted else {
+                lock.unlock()
+                print("☎️ [CallManager] PushKit — duplicate completion prevented reason=\(reason)")
+                return
+            }
+
+            hasCompleted = true
+            let fallbackWorkItem = self.fallbackWorkItem
+            self.fallbackWorkItem = nil
+            lock.unlock()
+
+            fallbackWorkItem?.cancel()
+            if fallbackFired {
+                print("☎️ [CallManager] PushKit — fallback completion fired")
+            }
+            print("☎️ [CallManager] PushKit — completion invoked reason=\(reason)")
+            completion()
+        }
+    }
+
     private enum PendingCallUIPresentation: Equatable {
         case incoming
         case active(fromCallKit: Bool)
@@ -43,6 +82,7 @@ public final class CallManager: NSObject {
     private let busyRetryInterval: TimeInterval = 0.6
     private let busyRetryCount = 3
     private let duplicatePushSuppressionWindow: TimeInterval = 5
+    private let pushKitCompletionFallbackDelay: TimeInterval = 1.5
     private var pendingEndStatus: CallStatus?
     private var incomingViewModel: IncomingCallViewModel?
     private var activeViewModel: ActiveCallViewModel?
@@ -60,6 +100,8 @@ public final class CallManager: NSObject {
     private let lifecycleBackgroundTaskDuration: TimeInterval = 5
     private let joinChannelFallbackDelay: TimeInterval = 1.5
     private let answerActionFulfillmentTimeout: TimeInterval = 3
+    private var isFinalizingCurrentCall = false
+    private var currentFinalizationCallUUID: UUID?
     /// Tracks whether the native CallKit UI was suppressed for the current
     /// incoming call because the app was in the foreground. When `true`,
     /// answer/end actions bypass CXCallController and go directly through
@@ -195,25 +237,38 @@ public final class CallManager: NSObject {
         setSpeakerEnabled(defaultSpeakerEnabledState)
     }
 
-    public func handleIncomingPush(payload: [AnyHashable: Any], completion: @escaping () -> Void) {
-        print("☎️ [CallManager] handleIncomingPush — raw payload: \(stringifyPushPayload(payload))")
+    public func handleIncomingPush(payload: [AnyHashable: Any], isVoip: Bool = true, completion: @escaping () -> Void) {
+        let source: CallPushTransport = isVoip ? .voip : .remoteNotification
+        handleIncomingPush(payload: payload, source: source, completion: completion)
+    }
+
+    public func handleIncomingPush(payload: [AnyHashable: Any], source: CallPushTransport, completion: @escaping () -> Void) {
+        print("☎️ [CallManager] handleIncomingPush — raw payload: \(stringifyPushPayload(payload)), source: \(source.rawValue)")
         let incomingThreadId = threadId(from: payload)
-        let incomingPayload = CallPayload(userInfo: payload)
+        let incomingPayload = source == .voip ? CallPayload(voipUserInfo: payload) : nil
         let parsedStatus = parsedStatusEvent(from: payload)
 
-        print("☎️ [CallManager] handleIncomingPush — parsed threadId: \(incomingThreadId ?? "nil"), source: \(threadIdSource(from: payload)?.rawValue ?? "none"), parsedStatus: \(parsedStatus?.status.rawValue ?? "nil"), statusSource: \(parsedStatus?.source.rawValue ?? "none"), currentSession: \(currentSession?.payload.threadId ?? "none"), state: \(currentSession.map { String(describing: $0.state) } ?? "nil"), isForeground: \(host?.isAppInForeground ?? false), didSuppressCallKitUI: \(didSuppressCallKitUI)")
+        print("gurpal singh 01 ☎️ [CallManager] handleIncomingPush — parsed threadId: \(incomingThreadId ?? "nil"), source: \(threadIdSource(from: payload)?.rawValue ?? "none"), pushTransport: \(source.rawValue), parsedStatus: \(parsedStatus?.status.rawValue ?? "nil"), statusSource: \(parsedStatus?.source.rawValue ?? "none"), currentSession: \(currentSession?.payload.threadId ?? "none"), state: \(currentSession.map { String(describing: $0.state) } ?? "nil"), isForeground: \(host?.isAppInForeground ?? false), didSuppressCallKitUI: \(didSuppressCallKitUI)")
 
         if shouldSuppressDuplicatePush(threadId: incomingThreadId, status: parsedStatus?.status.rawValue ?? incomingStatus(from: payload, payload: incomingPayload)) {
             print("☎️ [CallManager] handleIncomingPush — duplicate suppression blocked handling")
-            completion()
+            if source == .voip {
+                reportTransientIncomingCallIfNeeded(payload: incomingPayload, completion: completion) } else { completion() }
             return
         }
 
         if let directStatus = parsedStatus?.status {
             print("☎️ [CallManager] handleIncomingPush — treating payload as terminal status: \(directStatus.rawValue)")
             if incomingThreadId == currentSession?.payload.threadId {
-                handleRemoteTermination(status: directStatus)
+                handleRemoteTermination(status: directStatus, source: "push_terminal_status")
             }
+            if source == .voip {
+                reportTransientIncomingCallIfNeeded(payload: incomingPayload, endStatus: directStatus, completion: completion) } else { completion() }
+            return
+        }
+
+        guard source == .voip else {
+            print("☎️ [CallManager] handleIncomingPush — ignoring non-VoIP invite payload")
             completion()
             return
         }
@@ -237,21 +292,23 @@ public final class CallManager: NSObject {
         }
 
         guard let payload = incomingPayload else {
-            print("☎️ [CallManager] handleIncomingPush — invalid payload, marking failed")
+            print("☎️ [CallManager] handleIncomingPush — invalid VoIP payload, marking failed")
             reportTransientIncomingCallIfNeeded(payload: nil, markFailed: true, completion: completion)
             return
         }
 
         let incomingPresentationMode: IncomingCallPresentationMode = shouldBypassCallKitForIncomingCall() ? .inApp : .callKit
-        print("☎️ [CallManager] handleIncomingPush — treating payload as new incoming call, creating session presentationMode: \(incomingPresentationMode)")
+        print("☎️ [CallManager] handleIncomingPush — treating VoIP payload as new incoming call, creating session presentationMode: \(incomingPresentationMode)")
         host?.prepareForIncomingCall()
         createIncomingSession(with: payload, presentationMode: incomingPresentationMode)
         reportIncomingCall(completion: completion)
+        primeIncomingSession(for: payload.threadId)
     }
 
     private func beginOutgoingCall(with payload: CallPayload) {
         pendingDismissWorkItem?.cancel()
         stopListeningForCallStatus()
+        resetFinalizationState(reason: "begin_outgoing_call")
         currentSession = CallSession(payload: payload, state: .connecting)
         fetchThreadDetailsIfNeeded(threadId: payload.threadId)
         transport?.connectIfNeeded()
@@ -268,14 +325,18 @@ public final class CallManager: NSObject {
         pendingDismissWorkItem?.cancel()
         stopElapsedTimer()
         stopListeningForCallStatus()
+        resetFinalizationState(reason: "create_incoming_session")
         currentSession = CallSession(
             payload: payload,
             state: .ringing,
             incomingPresentationMode: presentationMode
         )
-        fetchThreadDetailsIfNeeded(threadId: payload.threadId)
+    }
+
+    private func primeIncomingSession(for threadId: String) {
+        fetchThreadDetailsIfNeeded(threadId: threadId)
         transport?.connectIfNeeded()
-        transport?.startListening(threadId: payload.threadId) { [weak self] event in
+        transport?.startListening(threadId: threadId) { [weak self] event in
             self?.handleRemoteStatus(event)
         }
     }
@@ -310,7 +371,7 @@ public final class CallManager: NSObject {
         updateCurrentSession {
             $0.hasReportedIncomingCallToSystem = true
         }
-        print("☎️ [CallManager] reportIncomingCall — reporting to CXProvider, UUID: \(session.callUUID)")
+        print("☎️ [CallManager] reportIncomingCall — CallKit reportNewIncomingCall start, UUID: \(session.callUUID)")
         provider.reportNewIncomingCall(with: session.callUUID, update: update) { [weak self] error in
             guard let self else {
                 completion()
@@ -318,14 +379,14 @@ public final class CallManager: NSObject {
             }
             DispatchQueue.main.async {
                 if let error {
-                    print("☎️ [CallManager] reportIncomingCall — CXProvider error: \(error.localizedDescription)")
+                    print("☎️ [CallManager] reportIncomingCall — CallKit reportNewIncomingCall failure: \(error.localizedDescription)")
                     self.updateCurrentSession {
                         $0.hasReportedIncomingCallToSystem = false
                     }
                 } else {
                     self.startUnansweredTimer()
                     self.transport?.emit(status: .visible, threadId: session.payload.threadId, completion: nil)
-                    print("☎️ [CallManager] reportIncomingCall — success, CallKit active")
+                    print("☎️ [CallManager] reportIncomingCall — CallKit reportNewIncomingCall success, UUID: \(session.callUUID)")
                 }
                 completion()
             }
@@ -357,7 +418,7 @@ public final class CallManager: NSObject {
         update.hasVideo = false
 
         let callUUID = UUID()
-        print("☎️ [CallManager] reportTransient — creating transient call UUID: \(callUUID), endStatus: \(endStatus?.rawValue ?? "nil"), markFailed: \(markFailed)")
+        print("☎️ [CallManager] reportTransient — CallKit reportNewIncomingCall start transient UUID: \(callUUID), endStatus: \(endStatus?.rawValue ?? "nil"), markFailed: \(markFailed)")
         provider.reportNewIncomingCall(with: callUUID, update: update) { [weak self] _ in
             DispatchQueue.main.async {
                 guard let self else {
@@ -519,32 +580,58 @@ public final class CallManager: NSObject {
 
     private func handleRemoteStatus(_ event: RemoteCallStatusEvent) {
         guard event.threadId == currentSession?.payload.threadId else { return }
+        print("☎️ [CallManager] handleRemoteStatus — threadId: \(event.threadId), status: \(event.status.rawValue), state: \(currentSession.map { String(describing: $0.state) } ?? "nil"), finalizing: \(isFinalizingCurrentCall)")
         switch event.status {
         case .visible:
             updateActiveCallStatus(text: configuration.ringingText)
         case .busy:
-            handleRemoteTermination(status: .busy)
+            handleRemoteTermination(status: .busy, source: "socket_status_busy")
         case .declined:
-            handleRemoteTermination(status: .declined)
+            handleRemoteTermination(status: .declined, source: "socket_status_declined")
         case .ended:
-            handleRemoteTermination(status: .ended)
+            handleRemoteTermination(status: .ended, source: "socket_status_ended")
         case .notAnswered:
-            handleRemoteTermination(status: .notAnswered)
+            handleRemoteTermination(status: .notAnswered, source: "socket_status_not_answered")
         case .none:
             break
         }
     }
 
     private func handleRemoteTermination(status: CallStatus) {
+        handleRemoteTermination(status: status, source: "unknown")
+    }
+
+    private func handleRemoteTermination(status: CallStatus, source: String) {
         pendingEndStatus = nil
-        guard currentSession != nil else { return }
+        guard let session = currentSession else {
+            print("☎️ [CallManager] handleRemoteTermination — ignored source=\(source), status=\(status.rawValue), no current session")
+            return
+        }
+        print("☎️ [CallManager] handleRemoteTermination — source=\(source), status=\(status.rawValue), threadId=\(session.payload.threadId), state=\(session.state), didSuppressCallKitUI=\(didSuppressCallKitUI), finalizing=\(isFinalizingCurrentCall)")
         finalizeCall(status: status, emitStatus: false, dismissAfter: terminalStatusDisplayDuration)
     }
 
     private func finalizeCall(status: CallStatus, emitStatus: Bool, dismissAfter: TimeInterval = 0) {
+        guard let session = currentSession else {
+            print("☎️ [CallManager] finalizeCall — ignored status=\(status.rawValue), emitStatus=\(emitStatus), no current session")
+            return
+        }
+        if isFinalizingCurrentCall {
+            print("☎️ [CallManager] finalizeCall — duplicate finalization ignored status=\(status.rawValue), emitStatus=\(emitStatus), threadId=\(session.payload.threadId), callUUID=\(session.callUUID.uuidString), currentFinalizationCallUUID=\(currentFinalizationCallUUID?.uuidString ?? "nil")")
+            return
+        }
+
+        isFinalizingCurrentCall = true
+        currentFinalizationCallUUID = session.callUUID
+        updateCurrentSession {
+            $0.state = .ending(status)
+        }
+        print("☎️ [CallManager] finalizeCall — start status=\(status.rawValue), emitStatus=\(emitStatus), dismissAfter=\(dismissAfter), threadId=\(session.payload.threadId), callUUID=\(session.callUUID), didSuppressCallKitUI=\(didSuppressCallKitUI)")
+
         withLifecycleBackgroundTask(named: "TevioCallKit.FinalizeCall") {
             let callUUID = currentSession?.callUUID
             pendingDismissWorkItem?.cancel()
+            pendingDismissWorkItem = nil
             cancelUnansweredTimer()
             stopElapsedTimer()
             cancelJoinChannelFallback()
@@ -564,15 +651,13 @@ public final class CallManager: NSObject {
             stopRingtone()
             #if canImport(CallKit) && !targetEnvironment(macCatalyst)
             if let callUUID, !didSuppressCallKitUI {
-                // Only report to CallKit if we haven't already suppressed it.
-                // When didSuppressCallKitUI is true, the call was already reported
-                // as .answeredElsewhere during the foreground suppression.
                 print("☎️ [CallManager] finalizeCall — reporting call ended to CXProvider")
                 provider.reportCall(with: callUUID, endedAt: Date(), reason: callEndedReason(for: status))
             }
             #endif
             if dismissAfter > 0 {
                 let workItem = DispatchWorkItem { [weak self] in
+                    print("☎️ [CallManager] finalizeCall — executing delayed reset status=\(status.rawValue)")
                     self?.resetCallPresentationState(animated: true)
                 }
                 pendingDismissWorkItem = workItem
@@ -592,6 +677,7 @@ public final class CallManager: NSObject {
     }
 
     private func resetCallPresentationState(animated: Bool) {
+        print("☎️ [CallManager] resetCallPresentationState — animated: \(animated), didSuppressCallKitUI: \(didSuppressCallKitUI), pendingUI: \(String(describing: pendingCallUIPresentation)), finalizing: \(isFinalizingCurrentCall)")
         pendingDismissWorkItem?.cancel()
         pendingDismissWorkItem = nil
         dismissPresentedCallUI(animated: animated)
@@ -611,9 +697,11 @@ public final class CallManager: NSObject {
         pendingAnswerActionTimeoutWorkItem = nil
         pendingAnswerAction = nil
         #endif
+        resetFinalizationState(reason: "reset_call_presentation_state")
     }
 
     private func dismissPresentedCallUI(animated: Bool) {
+        print("☎️ [CallManager] dismissPresentedCallUI — start animated: \(animated), incomingPresented: \(incomingCallController?.presentingViewController != nil), activePresented: \(activeCallController?.presentingViewController != nil)")
         if let incomingController = incomingCallController,
            incomingController.presentingViewController != nil {
             incomingController.dismiss(animated: animated)
@@ -749,23 +837,51 @@ public final class CallManager: NSObject {
 
     private func withLifecycleBackgroundTask(named name: String, operation: () -> Void) {
         #if os(iOS) && !targetEnvironment(macCatalyst)
+        let applicationState = UIApplication.shared.applicationState
+        guard applicationState != .active else {
+            print("☎️ [CallManager] withLifecycleBackgroundTask — skipped name=\(name) state=active")
+            operation()
+            return
+        }
+
         var backgroundTaskIdentifier: UIBackgroundTaskIdentifier = .invalid
-        backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask(withName: name) {
-            if backgroundTaskIdentifier != .invalid {
-                UIApplication.shared.endBackgroundTask(backgroundTaskIdentifier)
-                backgroundTaskIdentifier = .invalid
+        var hasEndedBackgroundTask = false
+        func endBackgroundTask(reason: String) {
+            guard !hasEndedBackgroundTask, backgroundTaskIdentifier != .invalid else {
+                print("☎️ [CallManager] withLifecycleBackgroundTask — end skipped name=\(name) reason=\(reason) taskInvalid=\(backgroundTaskIdentifier == .invalid) alreadyEnded=\(hasEndedBackgroundTask)")
+                return
             }
+            UIApplication.shared.endBackgroundTask(backgroundTaskIdentifier)
+            print("☎️ [CallManager] withLifecycleBackgroundTask — ended name=\(name) reason=\(reason)")
+            hasEndedBackgroundTask = true
+            backgroundTaskIdentifier = .invalid
+        }
+
+        backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask(withName: name) {
+            endBackgroundTask(reason: "expiration")
+        }
+        guard backgroundTaskIdentifier != .invalid else {
+            print("☎️ [CallManager] withLifecycleBackgroundTask — failed to start name=\(name)")
+            operation()
+            return
+        }
+
+        print("☎️ [CallManager] withLifecycleBackgroundTask — started name=\(name) state=\(applicationState.rawValue) timeout=\(lifecycleBackgroundTaskDuration)")
+        defer {
+            endBackgroundTask(reason: "operation_complete")
         }
         operation()
-        guard backgroundTaskIdentifier != .invalid else { return }
-        let taskIdentifier = backgroundTaskIdentifier
-        DispatchQueue.main.asyncAfter(deadline: .now() + lifecycleBackgroundTaskDuration) {
-            guard taskIdentifier != .invalid else { return }
-            UIApplication.shared.endBackgroundTask(taskIdentifier)
-        }
         #else
         operation()
         #endif
+    }
+
+    private func resetFinalizationState(reason: String) {
+        if isFinalizingCurrentCall || currentFinalizationCallUUID != nil {
+            print("☎️ [CallManager] resetFinalizationState — reason=\(reason), previousCallUUID=\(currentFinalizationCallUUID?.uuidString ?? "nil")")
+        }
+        isFinalizingCurrentCall = false
+        currentFinalizationCallUUID = nil
     }
 
     private func bindAudioCallbacks() {
@@ -782,7 +898,7 @@ public final class CallManager: NSObject {
 
         audioEngine.onRemoteUserLeft = { [weak self] in
             DispatchQueue.main.async {
-                self?.handleRemoteTermination(status: .ended)
+                self?.handleRemoteTermination(status: .ended, source: "agora_remote_left")
             }
         }
 
@@ -831,18 +947,7 @@ public final class CallManager: NSObject {
     private func directTerminationStatus(from payload: [AnyHashable: Any]) -> CallStatus? {
         let rawStatus = CallPushPayloadParser.stringValue(forKeys: ["status", "type"], in: payload)
         guard let rawStatus else { return nil }
-        switch rawStatus.value {
-        case CallStatus.ended.rawValue:
-            return .ended
-        case CallStatus.declined.rawValue:
-            return .declined
-        case CallStatus.notAnswered.rawValue:
-            return .notAnswered
-        case CallStatus.busy.rawValue:
-            return .busy
-        default:
-            return nil
-        }
+        return normalizedTerminalStatus(from: rawStatus.value)
     }
 
     private func threadId(from payload: [AnyHashable: Any]) -> String? {
@@ -870,16 +975,47 @@ public final class CallManager: NSObject {
         return incomingPayload?.type
     }
 
+    private func normalizedPushEventIdentifier(from rawValue: String) -> String? {
+        if let terminalStatus = normalizedTerminalStatus(from: rawValue) {
+            return terminalStatus.rawValue
+        }
+
+        if let incomingCallEvent = CallPushPayloadParser.normalizedIncomingCallEventName(from: rawValue) {
+            return incomingCallEvent
+        }
+
+        let normalizedValue = CallPushPayloadParser.normalizedToken(rawValue)
+        return normalizedValue.isEmpty ? nil : normalizedValue
+    }
+
+    private func normalizedTerminalStatus(from rawValue: String) -> CallStatus? {
+        let normalizedStatus = CallPushPayloadParser.normalizedToken(rawValue)
+        if normalizedStatus == CallStatus.ended.rawValue.lowercased() || normalizedStatus == "ended" {
+            return .ended
+        }
+        if normalizedStatus == CallStatus.declined.rawValue.lowercased() || normalizedStatus == "declined" {
+            return .declined
+        }
+        if normalizedStatus == CallStatus.notAnswered.rawValue.lowercased() || normalizedStatus == "missed" || normalizedStatus == "not-answered" {
+            return .notAnswered
+        }
+        if normalizedStatus == CallStatus.busy.rawValue.lowercased() || normalizedStatus == "busy" {
+            return .busy
+        }
+        return nil
+    }
+
     private func shouldSuppressDuplicatePush(threadId: String?, status: String?) -> Bool {
         pruneExpiredPushEventTimestamps()
         guard
             let threadId,
-            let status
+            let status,
+            let normalizedEvent = normalizedPushEventIdentifier(from: status)
         else {
             return false
         }
 
-        let key = "\(threadId)|\(status)"
+        let key = "\(threadId)|\(normalizedEvent)"
         let now = Date()
         if let recentDate = recentPushEventTimestamps[key], now.timeIntervalSince(recentDate) < duplicatePushSuppressionWindow {
             return true
@@ -950,7 +1086,16 @@ extension CallManager: PKPushRegistryDelegate {
     }
 
     public func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
-        handleIncomingPush(payload: payload.dictionaryPayload, completion: completion)
+        print("☎️ [CallManager] PushKit — VoIP push received, type: \(type.rawValue)")
+        let completionGuard = PushKitCompletionGuard(
+            timeout: pushKitCompletionFallbackDelay,
+            completion: completion
+        )
+        let completionOnce: () -> Void = {
+            completionGuard.invoke(reason: "normal_path")
+        }
+print("voippp \(payload.dictionaryPayload)")
+        handleIncomingPush(payload: payload.dictionaryPayload, source: .voip, completion: completionOnce)
     }
 }
 #endif
